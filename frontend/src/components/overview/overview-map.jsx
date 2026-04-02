@@ -89,6 +89,13 @@ L.Icon.Default.mergeOptions({
 });
 
 const storageMapZoomValueKey = 'overview-map-zoom-level';
+const satelliteIconDimCircle = L.divIcon({
+    className: 'overview-satellite-dim-icon',
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:#38bdf8;border:1px solid #e0f2fe;box-shadow:0 0 0 1px rgba(0,0,0,0.45),0 0 5px rgba(56,189,248,0.45);"></div>',
+    iconSize: [10, 10],
+    iconAnchor: [5, 5],
+    popupAnchor: [0, -5],
+});
 
 const CenterHomeButton = React.memo(function CenterHomeButton() {
     const { t } = useTranslation('overview');
@@ -525,7 +532,7 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                             trackingSatelliteId={trackingSatelliteId}
                             selectedSatelliteId={selectedSatelliteId}
                             markerEventHandlers={markerEventHandlers}
-                            satelliteIcon={satelliteIcon2}
+                            satelliteIcon={isVisible ? satelliteIcon2 : satelliteIconDimCircle}
                             opacity={1}
                             handleSetTrackingOnBackend={handleSetTrackingOnBackend}
                         />
@@ -545,7 +552,7 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                         <Marker
                             key={'marker-' + satellite['norad_id']}
                             position={[lat, lon]}
-                            icon={satelliteIcon2}
+                            icon={satelliteIconDimCircle}
                             eventHandlers={markerEventHandlers}
                             opacity={0.6}
                         ></Marker>
