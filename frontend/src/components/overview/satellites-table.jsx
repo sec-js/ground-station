@@ -54,6 +54,79 @@ import IconButton from '@mui/material/IconButton';
 
 const SATELLITE_NUMBER_LIMIT = 200;
 
+const getSatelliteBackgroundColor = (color, theme, coefficient) => ({
+    backgroundColor: darken(color, coefficient),
+    ...theme.applyStyles('light', {
+        backgroundColor: lighten(color, coefficient),
+    }),
+});
+
+const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+    '& .satellite-cell-alive': {
+        ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.8),
+        '&:hover': {
+            ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.7),
+        },
+        '&.Mui-selected': {
+            ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.6),
+            '&:hover': {
+                ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.5),
+            },
+        },
+    },
+    '& .satellite-cell-dead': {
+        ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.8),
+        '&:hover': {
+            ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.7),
+        },
+        '&.Mui-selected': {
+            ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.6),
+            '&:hover': {
+                ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.5),
+            },
+        },
+        textDecoration: 'line-through',
+    },
+    '& .satellite-cell-reentered': {
+        ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.8),
+        '&:hover': {
+            ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.7),
+        },
+        '&.Mui-selected': {
+            ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.6),
+            '&:hover': {
+                ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.5),
+            },
+        },
+        textDecoration: 'line-through',
+    },
+    '& .satellite-cell-unknown': {
+        ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.8),
+        '&:hover': {
+            ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.7),
+        },
+        '&.Mui-selected': {
+            ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.6),
+            '&:hover': {
+                ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.5),
+            },
+        },
+    },
+    '& .satellite-cell-selected': {
+        ...getSatelliteBackgroundColor(theme.palette.secondary.dark, theme, 0.7),
+        fontWeight: 'bold',
+        '&:hover': {
+            ...getSatelliteBackgroundColor(theme.palette.secondary.main, theme, 0.6),
+        },
+        '&.Mui-selected': {
+            ...getSatelliteBackgroundColor(theme.palette.secondary.main, theme, 0.5),
+            '&:hover': {
+                ...getSatelliteBackgroundColor(theme.palette.secondary.main, theme, 0.4),
+            },
+        },
+    }
+}));
+
 const MemoizedStyledDataGrid = React.memo(({
                                                apiRef,
                                                satellites,
@@ -74,80 +147,7 @@ const MemoizedStyledDataGrid = React.memo(({
     const [page, setPage] = useState(0);
     const { timezone, locale } = useUserTimeSettings();
 
-    const getBackgroundColor = (color, theme, coefficient) => ({
-        backgroundColor: darken(color, coefficient),
-        ...theme.applyStyles('light', {
-            backgroundColor: lighten(color, coefficient),
-        }),
-    });
-
-    const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
-        '& .satellite-cell-alive': {
-            ...getBackgroundColor(theme.palette.success.main, theme, 0.8),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.success.main, theme, 0.7),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.success.main, theme, 0.6),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.success.main, theme, 0.5),
-                },
-            },
-        },
-        '& .satellite-cell-dead': {
-            ...getBackgroundColor(theme.palette.error.main, theme, 0.8),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.error.main, theme, 0.7),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.error.main, theme, 0.6),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.error.main, theme, 0.5),
-                },
-            },
-            textDecoration: 'line-through',
-        },
-        '& .satellite-cell-reentered': {
-            ...getBackgroundColor(theme.palette.warning.main, theme, 0.8),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.warning.main, theme, 0.7),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.warning.main, theme, 0.6),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.warning.main, theme, 0.5),
-                },
-            },
-            textDecoration: 'line-through',
-        },
-        '& .satellite-cell-unknown': {
-            ...getBackgroundColor(theme.palette.grey[500], theme, 0.8),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.grey[500], theme, 0.7),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.grey[500], theme, 0.6),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.grey[500], theme, 0.5),
-                },
-            },
-        },
-        '& .satellite-cell-selected': {
-            ...getBackgroundColor(theme.palette.secondary.dark, theme, 0.7),
-            fontWeight: 'bold',
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.secondary.main, theme, 0.6),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.secondary.main, theme, 0.5),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.secondary.main, theme, 0.4),
-                },
-            },
-        }
-    }));
-
-    const formatDate = (dateString) => {
+    const formatDate = useCallback((dateString) => {
         if (!dateString) return t('satellites_table.na');
         try {
             return formatDateHelper(dateString, {
@@ -158,9 +158,9 @@ const MemoizedStyledDataGrid = React.memo(({
         } catch (e) {
             return t('satellites_table.invalid_date');
         }
-    };
+    }, [locale, t, timezone]);
 
-    const columns = [
+    const columns = React.useMemo(() => [
         {
             field: 'name',
             minWidth: 100,
@@ -388,7 +388,7 @@ const MemoizedStyledDataGrid = React.memo(({
                 return <span>{formatDate(params.value)}</span>;
             }
         }
-    ];
+    ], [formatDate, selectedSatelliteId, selectedSatellitePositionsRef, t]);
 
     // Memoize the row class name function to prevent unnecessary rerenders
     const getSatelliteRowStyles = useCallback((params) => {
@@ -408,6 +408,15 @@ const MemoizedStyledDataGrid = React.memo(({
         return "pointer-cursor";
     }, [selectedSatelliteId, selectedSatellitePositionsRef]);
 
+    const getRowId = useCallback((params) => params.norad_id, []);
+
+    const handlePaginationModelChange = useCallback((model) => {
+        setPage(model.page);
+        if (onPageSizeChange && model.pageSize !== pageSize) {
+            onPageSizeChange(model.pageSize);
+        }
+    }, [onPageSizeChange, pageSize]);
+
     return (
         <StyledDataGrid
             loading={loadingSatellites}
@@ -416,7 +425,7 @@ const MemoizedStyledDataGrid = React.memo(({
             fullWidth={true}
             getRowClassName={getSatelliteRowStyles}
             onRowClick={onRowClick}
-            getRowId={(params) => params.norad_id}
+            getRowId={getRowId}
             localeText={dataGridLocale.components.MuiDataGrid.defaultProps.localeText}
             columnVisibilityModel={columnVisibility}
             onColumnVisibilityModelChange={onColumnVisibilityChange}
@@ -436,12 +445,7 @@ const MemoizedStyledDataGrid = React.memo(({
                 pageSize: pageSize,
                 page: page,
             }}
-            onPaginationModelChange={(model) => {
-                setPage(model.page);
-                if (onPageSizeChange && model.pageSize !== pageSize) {
-                    onPageSizeChange(model.pageSize);
-                }
-            }}
+            onPaginationModelChange={handlePaginationModelChange}
             sortModel={sortModel}
             onSortModelChange={onSortModelChange}
             columns={columns}
@@ -533,10 +537,17 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
 
         const updateElevations = () => {
             const positions = selectedSatellitePositionsRef.current();
-            satelliteRows.forEach(row => {
-                const elevation = positions?.[row.norad_id]?.el;
+            const sortedIds = apiRef.current.getSortedRowIds?.() ?? satelliteRows.map((row) => row.norad_id);
+            const model = apiRef.current.state?.pagination?.paginationModel;
+            const currentPage = model?.page ?? 0;
+            const currentPageSize = model?.pageSize ?? satellitesTablePageSize;
+            const start = currentPage * currentPageSize;
+            const visibleIds = sortedIds.slice(start, start + currentPageSize);
+
+            visibleIds.forEach((noradId) => {
+                const elevation = positions?.[noradId]?.el;
                 if (elevation !== undefined) {
-                    apiRef.current.updateRows([{ norad_id: row.norad_id, elevation }]);
+                    apiRef.current.updateRows([{ norad_id: noradId, elevation }]);
                 }
             });
         };
@@ -548,7 +559,7 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
         const interval = setInterval(updateElevations, 2000);
 
         return () => clearInterval(interval);
-    }, [selectedSatellites, apiRef, satelliteRows, selectedSatellitePositionsRef]);
+    }, [selectedSatellites, apiRef, satelliteRows, satellitesTablePageSize, selectedSatellitePositionsRef]);
 
     useEffect(() => {
         dispatch(fetchSatelliteGroups({socket}))

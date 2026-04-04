@@ -17,7 +17,7 @@
  *
  */
 
-import React, {useCallback, useEffect, useRef, useState, useMemo} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
     MapContainer,
     TileLayer,
@@ -143,6 +143,18 @@ const FullscreenMapButton = React.memo(function FullscreenMapButton() {
     );
 });
 
+function areSatellitesEquivalent(prev = [], next = []) {
+    if (prev === next) return true;
+    if (!Array.isArray(prev) || !Array.isArray(next)) return false;
+    if (prev.length !== next.length) return false;
+    for (let i = 0; i < prev.length; i += 1) {
+        if (prev[i]?.norad_id !== next[i]?.norad_id) return false;
+        if (prev[i]?.tle1 !== next[i]?.tle1) return false;
+        if (prev[i]?.tle2 !== next[i]?.tle2) return false;
+    }
+    return true;
+}
+
 const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
     const {socket} = useSocket();
     const dispatch = useDispatch();
@@ -172,27 +184,23 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
         loadingSatellites,
     } = useSelector((state) => state.overviewSatTrack);
 
-    // Memoize selectedSatellites to prevent reference changes when content is the same
-    const rawSelectedSatellites = useSelector((state) => state.overviewSatTrack.selectedSatellites);
-    const selectedSatellites = useMemo(() => rawSelectedSatellites, [JSON.stringify(rawSelectedSatellites.map(s => s.norad_id))]);
+    const selectedSatellites = useSelector(
+        (state) => state.overviewSatTrack.selectedSatellites,
+        areSatellitesEquivalent
+    );
 
-    const {
-        trackingState,
-        satelliteId: trackingSatelliteId,
-        selectedRadioRig,
-        selectedRotator,
-        selectedTransmitter,
-        selectedSatellitePositions,
-    } = useSelector((state) => state.targetSatTrack);
-    const [currentPastSatellitesPaths, setCurrentPastSatellitesPaths] = useState([]);
-    const [currentFutureSatellitesPaths, setCurrentFutureSatellitesPaths] = useState([]);
-    const [currentSatellitesPosition, setCurrentSatellitesPosition] = useState([]);
-    const [currentSatellitesCoverage, setCurrentSatellitesCoverage] = useState([]);
-    const [currentCrosshairs, setCurrentCrosshairs] = useState([]);
-    const [terminatorLine, setTerminatorLine] = useState([]);
-    const [daySidePolygon, setDaySidePolygon] = useState([]);
-    const [sunPos, setSunPos] = useState(null);
-    const [moonPos, setMoonPos] = useState(null);
+    const trackingSatelliteId = useSelector((state) => state.targetSatTrack.satelliteId);
+    const [mapLayers, setMapLayers] = useState({
+        currentPastSatellitesPaths: [],
+        currentFutureSatellitesPaths: [],
+        currentSatellitesPosition: [],
+        currentSatellitesCoverage: [],
+        currentCrosshairs: [],
+        terminatorLine: [],
+        daySidePolygon: [],
+        sunPos: null,
+        moonPos: null,
+    });
     const {location} = useSelector((state) => state.location);
     const updateTimeRef = useRef(null);
     const controlsBoxRef = useRef(null);
@@ -565,25 +573,26 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
             }
         });
 
-        setCurrentPastSatellitesPaths(currentPastPaths);
-        setCurrentFutureSatellitesPaths(currentFuturePaths);
-        setCurrentSatellitesPosition(currentPos);
-        setCurrentSatellitesCoverage(currentCoverage);
-        setCurrentCrosshairs(currentCrosshair);
-
         // Day/night boundary
-        const terminatorLine = createTerminatorLine().reverse();
-        setTerminatorLine(terminatorLine);
-
+        const newTerminatorLine = createTerminatorLine().reverse();
         // Day side polygon
-        const dayPoly = [...terminatorLine];
+        const dayPoly = [...newTerminatorLine];
         dayPoly.push(dayPoly[dayPoly.length - 1]);
-        setDaySidePolygon(dayPoly);
 
         // Sun and moon position
-        const [sunPos, moonPos] = getSunMoonCoords();
-        setSunPos(sunPos);
-        setMoonPos(moonPos);
+        const [newSunPos, newMoonPos] = getSunMoonCoords();
+
+        setMapLayers({
+            currentPastSatellitesPaths: currentPastPaths,
+            currentFutureSatellitesPaths: currentFuturePaths,
+            currentSatellitesPosition: currentPos,
+            currentSatellitesCoverage: currentCoverage,
+            currentCrosshairs: currentCrosshair,
+            terminatorLine: newTerminatorLine,
+            daySidePolygon: dayPoly,
+            sunPos: newSunPos,
+            moonPos: newMoonPos,
+        });
 
         dispatch(setSelectedSatellitePositions(selectedSatPos));
     }
@@ -801,15 +810,15 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                     }}
                 />
 
-                {sunPos && showSunIcon ? <Marker position={sunPos} icon={sunIcon} opacity={0.5}/> : null}
+                {mapLayers.sunPos && showSunIcon ? <Marker position={mapLayers.sunPos} icon={sunIcon} opacity={0.5}/> : null}
 
-                {moonPos && showMoonIcon ? (
-                    <Marker position={moonPos} icon={moonIcon} opacity={0.5}/>
+                {mapLayers.moonPos && showMoonIcon ? (
+                    <Marker position={mapLayers.moonPos} icon={moonIcon} opacity={0.5}/>
                 ) : null}
 
-                {daySidePolygon.length > 1 && showTerminatorLine && (
+                {mapLayers.daySidePolygon.length > 1 && showTerminatorLine && (
                     <Polygon
-                        positions={daySidePolygon}
+                        positions={mapLayers.daySidePolygon}
                         pathOptions={{
                             fillColor: 'black',
                             fillOpacity: 0.4,
@@ -821,9 +830,9 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                     />
                 )}
 
-                {terminatorLine.length > 1 && showTerminatorLine && (
+                {mapLayers.terminatorLine.length > 1 && showTerminatorLine && (
                     <Polyline
-                        positions={terminatorLine}
+                        positions={mapLayers.terminatorLine}
                         pathOptions={{
                             color: 'white',
                             weight: 1,
@@ -838,11 +847,11 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                     <Marker position={[location.lat, location.lon]} icon={homeIcon} opacity={0.8}/>
                 )}
 
-                {showPastOrbitPath ? currentPastSatellitesPaths : null}
-                {showFutureOrbitPath ? currentFutureSatellitesPaths : null}
-                {currentSatellitesPosition}
-                {currentSatellitesCoverage}
-                {currentCrosshairs}
+                {showPastOrbitPath ? mapLayers.currentPastSatellitesPaths : null}
+                {showFutureOrbitPath ? mapLayers.currentFutureSatellitesPaths : null}
+                {mapLayers.currentSatellitesPosition}
+                {mapLayers.currentSatellitesCoverage}
+                {mapLayers.currentCrosshairs}
 
                 {/* Wrap MapArrowControls with a container to detect clicks */}
                 <div ref={arrowControlsRef}>

@@ -18,7 +18,7 @@
  */
 
 
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useSocket} from "../common/socket.jsx";
 import { toast } from '../../utils/toast-with-timestamp.jsx';
 import {calculateElevationCurvesForPasses} from '../../utils/elevation-curve-calculator.js';
@@ -70,6 +70,76 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import PassesTableSettingsDialog from './passes-table-settings-dialog.jsx';
 import { useUserTimeSettings } from '../../hooks/useUserTimeSettings.jsx';
 
+
+const getPassBackgroundColor = (color, theme, coefficient) => ({
+    backgroundColor: darken(color, coefficient),
+    ...theme.applyStyles('light', {
+        backgroundColor: lighten(color, coefficient),
+    }),
+});
+
+const StyledDataGrid = styled(DataGrid)(({theme}) => ({
+    '& .passes-cell-passing': {
+        ...getPassBackgroundColor(theme.palette.success.main, theme, 0.7),
+        '&:hover': {
+            ...getPassBackgroundColor(theme.palette.success.main, theme, 0.6),
+        },
+        '&.Mui-selected': {
+            ...getPassBackgroundColor(theme.palette.success.main, theme, 0.5),
+            '&:hover': {
+                ...getPassBackgroundColor(theme.palette.success.main, theme, 0.4),
+            },
+        },
+    },
+    '& .passes-cell-passed': {
+        ...getPassBackgroundColor(theme.palette.info.main, theme, 0.7),
+        '&:hover': {
+            ...getPassBackgroundColor(theme.palette.info.main, theme, 0.6),
+        },
+        '&.Mui-selected': {
+            ...getPassBackgroundColor(theme.palette.info.main, theme, 0.5),
+            '&:hover': {
+                ...getPassBackgroundColor(theme.palette.info.main, theme, 0.4),
+            },
+        },
+        textDecoration: 'line-through',
+    },
+    '& .passes-cell-dead': {
+        ...getPassBackgroundColor(theme.palette.error.main, theme, 0.7),
+        '&:hover': {
+            ...getPassBackgroundColor(theme.palette.error.main, theme, 0.6),
+        },
+        '&.Mui-selected': {
+            ...getPassBackgroundColor(theme.palette.error.main, theme, 0.5),
+            '&:hover': {
+                ...getPassBackgroundColor(theme.palette.error.main, theme, 0.4),
+            },
+        },
+        textDecoration: 'line-through',
+    },
+    '& .passes-cell-warning': {
+        color: theme.palette.error.main,
+        textDecoration: 'line-through',
+    },
+    '& .passes-cell-success': {
+        color: theme.palette.success.main,
+        fontWeight: 'bold',
+        textDecoration: 'underline',
+    },
+    '& .passes-cell-active': {
+        ...getPassBackgroundColor(theme.palette.secondary.dark, theme, 0.7),
+        fontWeight: 'bold',
+        '&:hover': {
+            ...getPassBackgroundColor(theme.palette.secondary.main, theme, 0.6),
+        },
+        '&.Mui-selected': {
+            ...getPassBackgroundColor(theme.palette.secondary.main, theme, 0.5),
+            '&:hover': {
+                ...getPassBackgroundColor(theme.palette.secondary.main, theme, 0.4),
+            },
+        },
+    }
+}));
 
 const CustomPagination = () => {
     const apiRef = useGridApiContext();
@@ -247,6 +317,8 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
     const currentLanguage = i18n.language;
     const dataGridLocale = currentLanguage === 'el' ? elGR : enUS;
     const [page, setPage] = useState(0);
+    const pageRef = useRef(0);
+    const pageSizeRef = useRef(pageSize);
 
     // Convert minutes to hours for display
     const projectionHours = Math.round(orbitProjectionDuration / 60);
@@ -262,88 +334,29 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
         return state.overviewSatTrack.selectedSatellitePositions;
     });
 
-    const getBackgroundColor = (color, theme, coefficient) => ({
-        backgroundColor: darken(color, coefficient),
-        ...theme.applyStyles('light', {
-            backgroundColor: lighten(color, coefficient),
-        }),
-    });
+    useEffect(() => {
+        pageSizeRef.current = pageSize;
+    }, [pageSize]);
 
-    const StyledDataGrid = styled(DataGrid)(({theme}) => ({
-        '& .passes-cell-passing': {
-            ...getBackgroundColor(theme.palette.success.main, theme, 0.7),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.success.main, theme, 0.6),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.success.main, theme, 0.5),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.success.main, theme, 0.4),
-                },
-            },
-        },
-        '& .passes-cell-passed': {
-            ...getBackgroundColor(theme.palette.info.main, theme, 0.7),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.info.main, theme, 0.6),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.info.main, theme, 0.5),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.info.main, theme, 0.4),
-                },
-            },
-            textDecoration: 'line-through',
-        },
-        '& .passes-cell-dead': {
-            ...getBackgroundColor(theme.palette.error.main, theme, 0.7),
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.error.main, theme, 0.6),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.error.main, theme, 0.5),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.error.main, theme, 0.4),
-                },
-            },
-            textDecoration: 'line-through',
-        },
-        '& .passes-cell-warning': {
-            color: theme.palette.error.main,
-            textDecoration: 'line-through',
-        },
-        '& .passes-cell-success': {
-            color: theme.palette.success.main,
-            fontWeight: 'bold',
-            textDecoration: 'underline',
-        },
-        '& .passes-cell-active': {
-            ...getBackgroundColor(theme.palette.secondary.dark, theme, 0.7),
-            fontWeight: 'bold',
-            '&:hover': {
-                ...getBackgroundColor(theme.palette.secondary.main, theme, 0.6),
-            },
-            '&.Mui-selected': {
-                ...getBackgroundColor(theme.palette.secondary.main, theme, 0.5),
-                '&:hover': {
-                    ...getBackgroundColor(theme.palette.secondary.main, theme, 0.4),
-                },
-            },
-        }
-    }));
+    const getVisiblePageRowIds = useCallback(() => {
+        if (!apiRef.current) return [];
+        const sortedIds = apiRef.current.getSortedRowIds?.() ?? apiRef.current.getAllRowIds?.() ?? [];
+        const currentPage = pageRef.current ?? 0;
+        const currentPageSize = pageSizeRef.current ?? pageSize;
+        const start = currentPage * currentPageSize;
+        const end = start + currentPageSize;
+        return sortedIds.slice(start, end);
+    }, [apiRef, pageSize]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
-            const rowIds = apiRef.current.getAllRowIds();
+            const rowIds = getVisiblePageRowIds();
             rowIds.forEach((rowId) => {
-
-                // Access the row model
                 const rowNode = apiRef.current.getRowNode(rowId);
                 if (!rowNode) {
                     return;
                 }
 
-                // Update only the row model in the grid's internal state
                 apiRef.current.updateRows([{
                     id: rowId,
                     _rowClassName: ''
@@ -354,9 +367,14 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
         return () => {
             clearInterval(intervalId);
         };
-    }, []);
+    }, [apiRef, getVisiblePageRowIds]);
 
-    const columns = [
+    const localeText = useMemo(() => ({
+        ...dataGridLocale.components.MuiDataGrid.defaultProps.localeText,
+        noRowsLabel: t('passes_table.no_passes', { hours: projectionHours })
+    }), [dataGridLocale.components.MuiDataGrid.defaultProps.localeText, projectionHours, t]);
+
+    const columns = useMemo(() => [
         {
             field: 'name',
             minWidth: 120,
@@ -617,9 +635,9 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
             },
             hide: true,
         },
-    ];
+    ], [t, targetSatTrackRef, selectedSatellitePositionsRef]);
 
-    const getPassesRowStyles = (param) => {
+    const getPassesRowStyles = useCallback((param) => {
         if (param.row) {
             const targetSatTrack = targetSatTrackRef.current();
             const isTargetSat = targetSatTrack.satelliteData['details']['norad_id'] === param.row['norad_id'];
@@ -650,7 +668,19 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
                 }
             }
         }
-    }
+        return "pointer-cursor";
+    }, [targetSatTrackRef]);
+
+    const getRowId = useCallback((params) => params.id, []);
+
+    const handlePaginationModelChange = useCallback((model) => {
+        setPage(model.page);
+        pageRef.current = model.page;
+        pageSizeRef.current = model.pageSize;
+        if (onPageSizeChange && model.pageSize !== pageSize) {
+            onPageSizeChange(model.pageSize);
+        }
+    }, [onPageSizeChange, pageSize]);
 
     return (
         <StyledDataGrid
@@ -660,13 +690,8 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
             loading={passesLoading}
             getRowClassName={getPassesRowStyles}
             onRowClick={onRowClick}
-            getRowId={(params) => {
-                return params.id;
-            }}
-            localeText={{
-                ...dataGridLocale.components.MuiDataGrid.defaultProps.localeText,
-                noRowsLabel: t('passes_table.no_passes', { hours: projectionHours })
-            }}
+            getRowId={getRowId}
+            localeText={localeText}
             sx={{
                 border: 0,
                 marginTop: 0,
@@ -693,12 +718,7 @@ const MemoizedStyledDataGrid = React.memo(function MemoizedStyledDataGrid({passe
                 pageSize: pageSize,
                 page: page,
             }}
-            onPaginationModelChange={(model) => {
-                setPage(model.page);
-                if (onPageSizeChange && model.pageSize !== pageSize) {
-                    onPageSizeChange(model.pageSize);
-                }
-            }}
+            onPaginationModelChange={handlePaginationModelChange}
             sortModel={sortModel}
             onSortModelChange={onSortModelChange}
             columnVisibilityModel={columnVisibility}
