@@ -913,12 +913,14 @@ const NextPassesGroupIsland = React.memo(function NextPassesGroupIsland() {
     const containerRef = useRef(null);
     const hasFetchedRef = useRef(false);
     const lastFetchParamsRef = useRef(null);
+    const lastSatelliteFetchGroupRef = useRef(null);
     const [containerHeight, setContainerHeight] = useState(0);
     const {
         selectedSatGroupId,
         passes,
         passesAreCached,
         passesLoading,
+        loadingSatellites,
         passesRangeStart,
         passesRangeEnd,
         passesCachedGroupId,
@@ -1054,10 +1056,44 @@ const NextPassesGroupIsland = React.memo(function NextPassesGroupIsland() {
     // Fetch satellites if we have a selected group but no satellites loaded yet
     // This handles the case where page loads with a group already selected (from localStorage)
     useEffect(() => {
-        if (selectedSatGroupId && (!selectedSatellites || selectedSatellites.length === 0) && !passesLoading) {
+        if (!selectedSatGroupId) {
+            lastSatelliteFetchGroupRef.current = null;
+            return;
+        }
+
+        const selectedSatellitesCount = selectedSatellites?.length ?? 0;
+
+        // If satellites are already available for this group, no fallback fetch is needed here.
+        if (selectedSatellitesCount > 0) {
+            lastSatelliteFetchGroupRef.current = selectedSatGroupId;
+            return;
+        }
+
+        if (passesLoading || loadingSatellites) {
+            return;
+        }
+
+        // Prevent repeated fetches when a group currently resolves to an empty satellite set.
+        if (lastSatelliteFetchGroupRef.current === selectedSatGroupId) {
+            return;
+        }
+
+        lastSatelliteFetchGroupRef.current = selectedSatGroupId;
+        if (selectedSatGroupId) {
             dispatch(fetchSatellitesByGroupId({ socket, satGroupId: selectedSatGroupId }));
         }
-    }, [selectedSatGroupId, selectedSatellites, dispatch, socket, passesLoading]);
+    }, [selectedSatGroupId, selectedSatellites, dispatch, socket, passesLoading, loadingSatellites]);
+
+    // If the selected group currently has no satellites, clear stale pass timeline/table data.
+    useEffect(() => {
+        if (!selectedSatGroupId || loadingSatellites) {
+            return;
+        }
+
+        if ((selectedSatellites?.length ?? 0) === 0) {
+            dispatch(setPasses([]));
+        }
+    }, [selectedSatGroupId, selectedSatellites, loadingSatellites, dispatch]);
 
     // Calculate elevation curves when passes are received
     useEffect(() => {

@@ -340,10 +340,27 @@ const overviewSlice = createSlice({
             state.formGroupSelectError = action.payload;
         },
         setSelectedSatGroupId(state, action) {
+            if (state.selectedSatGroupId !== action.payload) {
+                // Clear group-scoped transient data immediately to avoid showing stale satellites/passes
+                state.selectedSatellites = [];
+                state.selectedSatellitePositions = {};
+                state.selectedSatelliteId = "";
+                state.passes = [];
+                state.passesAreCached = false;
+                state.passesRangeStart = null;
+                state.passesRangeEnd = null;
+                state.passesCachedGroupId = null;
+            }
             state.selectedSatGroupId = action.payload;
         },
         setPasses(state, action) {
             state.passes = action.payload;
+            if (!action.payload || action.payload.length === 0) {
+                state.passesAreCached = false;
+                state.passesRangeStart = null;
+                state.passesRangeEnd = null;
+                state.passesCachedGroupId = null;
+            }
         },
         setPassesLoading(state, action) {
             state.loading = action.payload;
