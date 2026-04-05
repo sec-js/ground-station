@@ -22,8 +22,8 @@ import { useStore } from 'react-redux';
 import { useDispatch, useSelector } from "react-redux";
 import { DataGrid, gridClasses } from "@mui/x-data-grid";
 import { useGridApiRef } from '@mui/x-data-grid';
-import { darken, lighten, styled } from '@mui/material/styles';
-import {Typography, Chip, Tooltip, Box, FormControl, InputLabel, Select, MenuItem, ListSubheader} from "@mui/material";
+import { alpha, styled } from '@mui/material/styles';
+import {Typography, Chip, Tooltip, Box, Button, useMediaQuery, useTheme} from "@mui/material";
 import {
     getClassNamesBasedOnGridEditing,
     humanizeDate,
@@ -52,77 +52,64 @@ import { toast } from '../../utils/toast-with-timestamp.jsx';
 import SatellitesTableSettingsDialog from './satellites-table-settings-dialog.jsx';
 import IconButton from '@mui/material/IconButton';
 
-const SATELLITE_NUMBER_LIMIT = 200;
-
-const getSatelliteBackgroundColor = (color, theme, coefficient) => ({
-    backgroundColor: darken(color, coefficient),
-    ...theme.applyStyles('light', {
-        backgroundColor: lighten(color, coefficient),
-    }),
-});
+const getVisibilityState = (elevation) => {
+    if (elevation == null) return 'unknown';
+    return elevation > 0 ? 'visible' : 'below';
+};
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
-    '& .satellite-cell-alive': {
-        ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.8),
+    '& .MuiDataGrid-row': {
+        borderLeft: '3px solid transparent',
+    },
+    '& .satellite-row-visible': {
+        backgroundColor: alpha(theme.palette.success.main, 0.15),
+        borderLeftColor: alpha(theme.palette.success.main, 0.9),
+        ...theme.applyStyles('light', {
+            backgroundColor: alpha(theme.palette.success.main, 0.08),
+            borderLeftColor: alpha(theme.palette.success.main, 0.6),
+        }),
         '&:hover': {
-            ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.7),
-        },
-        '&.Mui-selected': {
-            ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.6),
-            '&:hover': {
-                ...getSatelliteBackgroundColor(theme.palette.success.main, theme, 0.5),
-            },
+            backgroundColor: alpha(theme.palette.success.main, 0.2),
+            ...theme.applyStyles('light', {
+                backgroundColor: alpha(theme.palette.success.main, 0.12),
+            }),
         },
     },
-    '& .satellite-cell-dead': {
-        ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.8),
-        '&:hover': {
-            ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.7),
-        },
-        '&.Mui-selected': {
-            ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.6),
-            '&:hover': {
-                ...getSatelliteBackgroundColor(theme.palette.error.main, theme, 0.5),
-            },
-        },
-        textDecoration: 'line-through',
+    '& .satellite-row-below': {
+        backgroundColor: alpha(theme.palette.info.main, 0.1),
+        borderLeftColor: alpha(theme.palette.info.main, 0.75),
+        ...theme.applyStyles('light', {
+            backgroundColor: alpha(theme.palette.info.main, 0.05),
+            borderLeftColor: alpha(theme.palette.info.main, 0.5),
+        }),
     },
-    '& .satellite-cell-reentered': {
-        ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.8),
-        '&:hover': {
-            ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.7),
-        },
-        '&.Mui-selected': {
-            ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.6),
-            '&:hover': {
-                ...getSatelliteBackgroundColor(theme.palette.warning.main, theme, 0.5),
-            },
-        },
-        textDecoration: 'line-through',
-    },
-    '& .satellite-cell-unknown': {
-        ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.8),
-        '&:hover': {
-            ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.7),
-        },
-        '&.Mui-selected': {
-            ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.6),
-            '&:hover': {
-                ...getSatelliteBackgroundColor(theme.palette.grey[500], theme, 0.5),
-            },
+    '& .satellite-row-dead': {
+        backgroundColor: alpha(theme.palette.error.main, 0.18),
+        borderLeftColor: alpha(theme.palette.error.main, 0.9),
+        ...theme.applyStyles('light', {
+            backgroundColor: alpha(theme.palette.error.main, 0.1),
+            borderLeftColor: alpha(theme.palette.error.main, 0.65),
+        }),
+        '& .MuiDataGrid-cell': {
+            color: theme.palette.text.secondary,
         },
     },
-    '& .satellite-cell-selected': {
-        ...getSatelliteBackgroundColor(theme.palette.secondary.dark, theme, 0.7),
+    '& .satellite-row-unknown': {
+        borderLeftColor: alpha(theme.palette.text.secondary, 0.55),
+    },
+    '& .satellite-row-selected': {
+        backgroundColor: alpha(theme.palette.secondary.main, 0.25),
+        borderLeftColor: alpha(theme.palette.secondary.main, 0.95),
         fontWeight: 'bold',
+        ...theme.applyStyles('light', {
+            backgroundColor: alpha(theme.palette.secondary.main, 0.12),
+            borderLeftColor: alpha(theme.palette.secondary.main, 0.75),
+        }),
         '&:hover': {
-            ...getSatelliteBackgroundColor(theme.palette.secondary.main, theme, 0.6),
-        },
-        '&.Mui-selected': {
-            ...getSatelliteBackgroundColor(theme.palette.secondary.main, theme, 0.5),
-            '&:hover': {
-                ...getSatelliteBackgroundColor(theme.palette.secondary.main, theme, 0.4),
-            },
+            backgroundColor: alpha(theme.palette.secondary.main, 0.3),
+            ...theme.applyStyles('light', {
+                backgroundColor: alpha(theme.palette.secondary.main, 0.16),
+            }),
         },
     }
 }));
@@ -131,6 +118,7 @@ const MemoizedStyledDataGrid = React.memo(({
                                                apiRef,
                                                satellites,
                                                onRowClick,
+                                               onRowDoubleClick,
                                                selectedSatelliteId,
                                                loadingSatellites,
                                                columnVisibility,
@@ -144,6 +132,8 @@ const MemoizedStyledDataGrid = React.memo(({
     const { t, i18n } = useTranslation('overview');
     const currentLanguage = i18n.language;
     const dataGridLocale = currentLanguage === 'el' ? elGR : enUS;
+    const theme = useTheme();
+    const isCompactView = useMediaQuery(theme.breakpoints.down('md'));
     const [page, setPage] = useState(0);
     const { timezone, locale } = useUserTimeSettings();
 
@@ -175,12 +165,24 @@ const MemoizedStyledDataGrid = React.memo(({
                 ].filter(Boolean).join(' / ') || t('satellites_table.no_alternative_names');
                 return (
                     <Tooltip title={tooltipText}>
-                        <span>
+                        <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', width: '100%', minWidth: 0 }}>
                             {isTracked && (
                                 <GpsFixedIcon sx={{ mr: 0.5, fontSize: '1.3rem', color: 'info.main', verticalAlign: 'middle' }} />
                             )}
-                            {params.value || '-'}
-                        </span>
+                            <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    lineHeight: 1.2,
+                                }}
+                            >
+                                {params.value || '-'}
+                            </Typography>
+                        </Box>
                     </Tooltip>
                 );
             }
@@ -227,6 +229,28 @@ const MemoizedStyledDataGrid = React.memo(({
                         elRate={position?.elRate}
                     />
                 );
+            }
+        },
+        {
+            field: 'visibility',
+            minWidth: 100,
+            headerName: t('satellites_table.visibility', { defaultValue: 'Visibility' }),
+            align: 'center',
+            headerAlign: 'center',
+            flex: 1,
+            sortComparator: (v1, v2) => {
+                const rank = { visible: 2, unknown: 1, below: 0 };
+                return (rank[v1] ?? 0) - (rank[v2] ?? 0);
+            },
+            renderCell: (params) => {
+                const visibility = params.value || 'unknown';
+                if (visibility === 'visible') {
+                    return <Chip label={t('satellites_table.visible', { defaultValue: 'Visible' })} color="success" size="small" sx={{ fontWeight: 700 }} />;
+                }
+                if (visibility === 'below') {
+                    return <Chip label={t('satellites_table.below_horizon', { defaultValue: 'Below Horizon' })} color="info" size="small" variant="outlined" sx={{ fontWeight: 700 }} />;
+                }
+                return <Chip label={t('satellites_table.status_unknown')} size="small" variant="outlined" sx={{ fontWeight: 700 }} />;
             }
         },
         {
@@ -306,32 +330,28 @@ const MemoizedStyledDataGrid = React.memo(({
                 const transmitters = params.row.transmitters;
                 const aliveCount = transmitters.filter(t => t.alive).length;
                 const deadCount = transmitters.length - aliveCount;
+                const total = transmitters.length;
+                const hasNoActive = aliveCount === 0;
 
                 return (
-                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Box sx={{
-                        width: '8px',
-                        height: '8px',
-                        bgcolor: 'success.main',
-                        borderRadius: '50%',
-                        display: 'inline-block'
-                    }}></Box>
-                            <span style={{ fontSize: '1rem' }}>{aliveCount}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Box sx={{
-                        width: '8px',
-                        height: '8px',
-                        bgcolor: 'error.main',
-                        borderRadius: '50%',
-                        display: 'inline-block'
-                    }}></Box>
-                            <span style={{ fontSize: '1rem' }}>{deadCount}</span>
-                        </div>
-                    </div>
+                    <Tooltip title={`${aliveCount}/${total} · ${deadCount} off`}>
+                        <Chip
+                            size="small"
+                            color={hasNoActive ? 'error' : 'success'}
+                            variant={hasNoActive ? 'outlined' : 'filled'}
+                            label={`${aliveCount}/${total}`}
+                            sx={{ fontWeight: 700, height: 20 }}
+                        />
+                    </Tooltip>
                 );
             }
+        },
+        {
+            field: 'active_tx_count',
+            minWidth: 70,
+            headerName: 'Active TX',
+            type: 'number',
+            hide: true,
         },
         {
             field: 'countries',
@@ -390,23 +410,41 @@ const MemoizedStyledDataGrid = React.memo(({
         }
     ], [formatDate, selectedSatelliteId, selectedSatellitePositionsRef, t]);
 
+    const effectiveColumnVisibility = React.useMemo(() => {
+        const base = {
+            visibility: true,
+            active_tx_count: false,
+            ...columnVisibility,
+        };
+        if (!isCompactView) return base;
+        return {
+            ...base,
+            alternative_name: false,
+            countries: false,
+            decayed: false,
+            updated: false,
+            launched: false,
+        };
+    }, [columnVisibility, isCompactView]);
+
     // Memoize the row class name function to prevent unnecessary rerenders
     const getSatelliteRowStyles = useCallback((params) => {
         if (!params.row) return "pointer-cursor";
 
         if (selectedSatelliteId === params.row.norad_id) {
-            return "satellite-cell-selected pointer-cursor";
+            return "satellite-row-selected pointer-cursor";
         }
 
-        // Color rows based on elevation: green only if positive
-        const selectedSatellitePositions = selectedSatellitePositionsRef.current();
-        const elevation = selectedSatellitePositions?.[params.row.norad_id]?.el;
-        if (elevation !== null && elevation !== undefined && elevation > 0) {
-            return "satellite-cell-alive pointer-cursor";
-        }
+        const status = params.row.status;
+        if (status === 'dead' || status === 're-entered') return "satellite-row-dead pointer-cursor";
+
+        const visibility = params.row.visibility || getVisibilityState(params.row.elevation);
+        if (visibility === 'visible') return "satellite-row-visible pointer-cursor";
+        if (visibility === 'below') return "satellite-row-below pointer-cursor";
+        if (visibility === 'unknown') return "satellite-row-unknown pointer-cursor";
 
         return "pointer-cursor";
-    }, [selectedSatelliteId, selectedSatellitePositionsRef]);
+    }, [selectedSatelliteId]);
 
     const getRowId = useCallback((params) => params.norad_id, []);
 
@@ -425,9 +463,10 @@ const MemoizedStyledDataGrid = React.memo(({
             fullWidth={true}
             getRowClassName={getSatelliteRowStyles}
             onRowClick={onRowClick}
+            onRowDoubleClick={onRowDoubleClick}
             getRowId={getRowId}
             localeText={dataGridLocale.components.MuiDataGrid.defaultProps.localeText}
-            columnVisibilityModel={columnVisibility}
+            columnVisibilityModel={effectiveColumnVisibility}
             onColumnVisibilityModelChange={onColumnVisibilityChange}
             sx={{
                 border: 0,
@@ -449,6 +488,7 @@ const MemoizedStyledDataGrid = React.memo(({
             sortModel={sortModel}
             onSortModelChange={onSortModelChange}
             columns={columns}
+            pinnedColumns={isCompactView ? { left: ['name'], right: ['elevation'] } : { left: ['name', 'norad_id'], right: ['elevation', 'status'] }}
         />
     );
 });
@@ -477,13 +517,12 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
     const columnVisibility = useSelector(state => state.overviewSatTrack.satellitesTableColumnVisibility);
     const satellitesTablePageSize = useSelector(state => state.overviewSatTrack.satellitesTablePageSize);
     const satellitesTableSortModel = useSelector(state => state.overviewSatTrack.satellitesTableSortModel);
-    const satGroups = useSelector(state => state.overviewSatTrack.satGroups);
-    const passesLoading = useSelector(state => state.overviewSatTrack.passesLoading);
     const openSatellitesTableSettingsDialog = useSelector(state => state.overviewSatTrack.openSatellitesTableSettingsDialog);
 
     const minHeight = 200;
     const hasLoadedFromStorageRef = useRef(false);
     const isLoadingRef = useRef(false);
+    const [quickFilterPreset, setQuickFilterPreset] = useState('all');
 
     // Load column visibility from localStorage on mount
     useEffect(() => {
@@ -528,8 +567,27 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
         return (selectedSatellites || []).map(satellite => ({
             ...satellite,
             elevation: positions?.[satellite.norad_id]?.el ?? null,
+            trend: positions?.[satellite.norad_id]?.trend ?? null,
+            visibility: getVisibilityState(positions?.[satellite.norad_id]?.el ?? null),
+            active_tx_count: (satellite.transmitters || []).filter((tx) => tx.alive).length,
         }));
     }, [selectedSatellites, selectedSatellitePositionsRef]);
+
+    const filteredSatelliteRows = React.useMemo(() => {
+        if (quickFilterPreset === 'visible') {
+            return satelliteRows.filter((row) => row.visibility === 'visible');
+        }
+        if (quickFilterPreset === 'rising') {
+            return satelliteRows.filter((row) => row.visibility === 'visible' && row.trend === 'rising');
+        }
+        if (quickFilterPreset === 'activeTx') {
+            return satelliteRows.filter((row) => (row.active_tx_count || 0) > 0);
+        }
+        if (quickFilterPreset === 'decayed') {
+            return satelliteRows.filter((row) => !!row.decayed || row.status === 'dead' || row.status === 're-entered');
+        }
+        return satelliteRows;
+    }, [satelliteRows, quickFilterPreset]);
 
     // Update rows with latest elevation data using apiRef to avoid full re-renders
     useEffect(() => {
@@ -546,8 +604,14 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
 
             visibleIds.forEach((noradId) => {
                 const elevation = positions?.[noradId]?.el;
+                const trend = positions?.[noradId]?.trend;
                 if (elevation !== undefined) {
-                    apiRef.current.updateRows([{ norad_id: noradId, elevation }]);
+                    apiRef.current.updateRows([{
+                        norad_id: noradId,
+                        elevation,
+                        trend,
+                        visibility: getVisibilityState(elevation),
+                    }]);
                 }
             });
         };
@@ -598,6 +662,10 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
         dispatch(setSelectedSatelliteId(params.row.norad_id));
     }, [dispatch]);
 
+    const handleOnRowDoubleClick = useCallback((params) => {
+        dispatch(setSelectedSatelliteId(params.row.norad_id));
+    }, [dispatch]);
+
     const handleColumnVisibilityChange = useCallback((newModel) => {
         dispatch(setSatellitesTableColumnVisibility(newModel));
     }, [dispatch]);
@@ -618,6 +686,52 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
         dispatch(setOpenSatellitesTableSettingsDialog(false));
     }, [dispatch]);
 
+    const applyDefaultSort = useCallback(() => {
+        dispatch(setSatellitesTableSortModel([
+            { field: 'visibility', sort: 'desc' },
+            { field: 'elevation', sort: 'desc' },
+            { field: 'status', sort: 'asc' },
+            { field: 'name', sort: 'asc' },
+        ]));
+    }, [dispatch]);
+
+    const handleQuickPreset = useCallback((preset) => {
+        setQuickFilterPreset(preset);
+        if (preset === 'all') {
+            applyDefaultSort();
+        } else if (preset === 'visible' || preset === 'rising') {
+            dispatch(setSatellitesTableSortModel([
+                { field: 'elevation', sort: 'desc' },
+                { field: 'name', sort: 'asc' },
+            ]));
+        } else if (preset === 'activeTx') {
+            dispatch(setSatellitesTableSortModel([
+                { field: 'active_tx_count', sort: 'desc' },
+                { field: 'name', sort: 'asc' },
+            ]));
+        } else if (preset === 'decayed') {
+            dispatch(setSatellitesTableSortModel([
+                { field: 'decayed', sort: 'desc' },
+                { field: 'name', sort: 'asc' },
+            ]));
+        }
+    }, [dispatch, applyDefaultSort]);
+
+    useEffect(() => {
+        const handleKeyboardShortcuts = (event) => {
+            if (!event.altKey) return;
+            if (event.key === '1') handleQuickPreset('all');
+            else if (event.key === '2') handleQuickPreset('visible');
+            else if (event.key === '3') handleQuickPreset('rising');
+            else if (event.key === '4') handleQuickPreset('activeTx');
+            else if (event.key === '5') handleQuickPreset('decayed');
+            else return;
+            event.preventDefault();
+        };
+        window.addEventListener('keydown', handleKeyboardShortcuts);
+        return () => window.removeEventListener('keydown', handleKeyboardShortcuts);
+    }, [handleQuickPreset]);
+
     return (
         <>
             <TitleBar
@@ -626,16 +740,56 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
                     bgcolor: 'background.titleBar',
                     borderBottom: '1px solid',
                     borderColor: 'border.main',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    height: 30,
+                    minHeight: 30,
+                    py: 0,
+                    display: 'flex',
+                    alignItems: 'center',
                 }}
             >
-                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%'}}>
+                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', height: '100%'}}>
                     <Box sx={{display: 'flex', alignItems: 'center'}}>
                         <Typography variant="subtitle2" sx={{fontWeight: 'bold'}}>
-                            {t('satellites_table.title')} ({t('satellites_table.satellites_count', { count: selectedSatellites?.length || 0 })})
+                            {t('satellites_table.title')} ({filteredSatelliteRows.length}/{selectedSatellites?.length || 0})
                         </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                        <Tooltip title="Alt+1">
+                            <span>
+                                <Button size="small" variant={quickFilterPreset === 'all' ? 'contained' : 'outlined'} onClick={() => handleQuickPreset('all')} sx={{ minHeight: 24, height: 24, py: 0, px: 1, lineHeight: 1.1, fontSize: '0.72rem' }}>
+                                    All
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Alt+2">
+                            <span>
+                                <Button size="small" variant={quickFilterPreset === 'visible' ? 'contained' : 'outlined'} onClick={() => handleQuickPreset('visible')} sx={{ minHeight: 24, height: 24, py: 0, px: 1, lineHeight: 1.1, fontSize: '0.72rem' }}>
+                                    Visible
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Alt+3">
+                            <span>
+                                <Button size="small" variant={quickFilterPreset === 'rising' ? 'contained' : 'outlined'} onClick={() => handleQuickPreset('rising')} sx={{ minHeight: 24, height: 24, py: 0, px: 1, lineHeight: 1.1, fontSize: '0.72rem' }}>
+                                    Rising
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Alt+4">
+                            <span>
+                                <Button size="small" variant={quickFilterPreset === 'activeTx' ? 'contained' : 'outlined'} onClick={() => handleQuickPreset('activeTx')} sx={{ minHeight: 24, height: 24, py: 0, px: 1, lineHeight: 1.1, fontSize: '0.72rem' }}>
+                                    Active TX
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip title="Alt+5">
+                            <span>
+                                <Button size="small" variant={quickFilterPreset === 'decayed' ? 'contained' : 'outlined'} onClick={() => handleQuickPreset('decayed')} sx={{ minHeight: 24, height: 24, py: 0, px: 1, lineHeight: 1.1, fontSize: '0.72rem' }}>
+                                    Decayed
+                                </Button>
+                            </span>
+                        </Tooltip>
                         <Tooltip title={t('satellites_table_settings.title')}>
                             <span>
                                 <IconButton
@@ -674,8 +828,9 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
                     ) : (
                         <MemoizedStyledDataGrid
                             apiRef={apiRef}
-                            satellites={satelliteRows}
+                            satellites={filteredSatelliteRows}
                             onRowClick={handleOnRowClick}
+                            onRowDoubleClick={handleOnRowDoubleClick}
                             selectedSatelliteId={selectedSatelliteId}
                             loadingSatellites={loadingSatellites}
                             columnVisibility={columnVisibility}

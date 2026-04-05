@@ -225,14 +225,17 @@ const overviewSlice = createSlice({
             alternative_name: false,
             norad_id: true,
             elevation: true,
+            visibility: true,
             status: true,
             transmitters: true,
             countries: false,
             decayed: false,
             updated: true,
             launched: false,
+            active_tx_count: false,
         },
         passesTableColumnVisibility: {
+            status: true,
             name: true,
             alternative_name: false,
             name_other: false,
@@ -253,8 +256,8 @@ const overviewSlice = createSlice({
         showGeostationarySatellites: true, // Default on - show geostationary satellites
         passesTablePageSize: 5, // Default page size for passes table
         satellitesTablePageSize: 50, // Default page size for satellites table
-        passesTableSortModel: [{field: 'event_start', sort: 'asc'}], // Default sort for passes table
-        satellitesTableSortModel: [{field: 'elevation', sort: 'desc'}], // Default sort for satellites table
+        passesTableSortModel: [{field: 'status', sort: 'asc'}, {field: 'event_start', sort: 'asc'}], // Default sort for passes table
+        satellitesTableSortModel: [{field: 'visibility', sort: 'desc'}, {field: 'elevation', sort: 'desc'}, {field: 'status', sort: 'asc'}, {field: 'name', sort: 'asc'}], // Default sort for satellites table
     },
     reducers: {
         setShowGeostationarySatellites(state, action) {
