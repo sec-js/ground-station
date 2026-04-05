@@ -38,6 +38,10 @@
     "distance_peak": "Distancia máxima",
     "geo_stat": "GEO Stat",
     "geo_sync": "GEO Sync",
+    "status_visible": "Visible",
+    "status_upcoming": "Próximo",
+    "status_passed": "Finalizado",
+    "status_dead": "Inactivo",
     "no_value": "sin valor",
     "no_data": "Sin datos",
     "no_passes": "No se detectaron pases para las próximas {{hours}} horas"

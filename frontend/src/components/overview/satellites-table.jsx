@@ -175,7 +175,7 @@ const MemoizedStyledDataGrid = React.memo(({
             return dynamicRows.filter((row) => row.visibility === 'visible');
         }
         if (quickFilterPreset === 'rising') {
-            return dynamicRows.filter((row) => row.visibility === 'visible' && row.trend === 'rising');
+            return dynamicRows.filter((row) => row.visibility === 'visible' && (row.trend === 'rising_slow' || row.trend === 'rising_fast'));
         }
         if (quickFilterPreset === 'activeTx') {
             return dynamicRows.filter((row) => (row.active_tx_count || 0) > 0);
@@ -569,7 +569,7 @@ const SatelliteDetailsTable = React.memo(function SatelliteDetailsTable() {
             return rows.filter((row) => {
                 const visibility = getVisibilityState(positions?.[row.norad_id]?.el ?? null);
                 const trend = positions?.[row.norad_id]?.trend ?? null;
-                return visibility === 'visible' && trend === 'rising';
+                return visibility === 'visible' && (trend === 'rising_slow' || trend === 'rising_fast');
             }).length;
         }
         if (quickFilterPreset === 'activeTx') {

@@ -38,6 +38,10 @@
     "distance_peak": "Entfernung am Höchstpunkt",
     "geo_stat": "GEO Stat",
     "geo_sync": "GEO Sync",
+    "status_visible": "Sichtbar",
+    "status_upcoming": "Bevorstehend",
+    "status_passed": "Vorbei",
+    "status_dead": "Inaktiv",
     "no_value": "kein Wert",
     "no_data": "Keine Daten",
     "no_passes": "Keine Überflüge für die nächsten {{hours}} Stunden erkannt"

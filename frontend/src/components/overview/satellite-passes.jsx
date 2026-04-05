@@ -385,24 +385,25 @@ const DurationFormatter = React.memo(function DurationFormatter({params, event_s
 });
 
 const PassStatusCell = React.memo(function PassStatusCell({status}) {
+    const { t } = useTranslation('overview');
     const statusConfig = {
         live: {
-            label: 'Live',
+            label: t('passes_table.status_visible'),
             color: 'success',
             icon: <RadioButtonCheckedIcon sx={{ fontSize: '0.85rem' }} />,
         },
         upcoming: {
-            label: 'Upcoming',
+            label: t('passes_table.status_upcoming'),
             color: 'warning',
             icon: <AccessTimeFilledIcon sx={{ fontSize: '0.85rem' }} />,
         },
         passed: {
-            label: 'Passed',
+            label: t('passes_table.status_passed'),
             color: 'info',
             icon: <DoneAllIcon sx={{ fontSize: '0.85rem' }} />,
         },
         dead: {
-            label: 'Dead',
+            label: t('passes_table.status_dead'),
             color: 'error',
             icon: <BlockIcon sx={{ fontSize: '0.85rem' }} />,
         },

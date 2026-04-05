@@ -314,6 +314,8 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                 const history = elevationHistoryRef.current[noradId];
                 let trend = 'stable';
                 let elRate = 0;
+                const lowRateThreshold = 0.04;
+                const highRateThreshold = 0.18;
 
                 if (history.length >= 2) {
                     // Calculate average rate of change
@@ -323,12 +325,16 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                     }
                     elRate = changes.reduce((a, b) => a + b, 0) / changes.length;
 
-                    // Determine trend based on rate (threshold: 0.1 degrees per update)
-                    if (elRate > 0.1) {
-                        trend = 'rising';
-                    } else if (elRate < -0.1) {
-                        trend = 'falling';
-                    } else if (Math.abs(elRate) <= 0.1 && el > 0) {
+                    // Determine trend bands based on elevation-rate thresholds.
+                    if (elRate >= highRateThreshold) {
+                        trend = 'rising_fast';
+                    } else if (elRate >= lowRateThreshold) {
+                        trend = 'rising_slow';
+                    } else if (elRate <= -highRateThreshold) {
+                        trend = 'falling_fast';
+                    } else if (elRate <= -lowRateThreshold) {
+                        trend = 'falling_slow';
+                    } else if (Math.abs(elRate) < lowRateThreshold && el > 0) {
                         // Check if we're at a peak (elevation is positive and rate is near zero)
                         if (history.length >= 3) {
                             const recent = history.slice(-3);
@@ -342,7 +348,7 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
 
                 // Calculate time to max elevation only for visible satellites
                 let timeToMaxEl = null;
-                if (el > 0 && trend === 'rising') {
+                if (el > 0 && (trend === 'rising_slow' || trend === 'rising_fast')) {
                     timeToMaxEl = calculateTimeToMaxElevation(
                         satellite['tle1'],
                         satellite['tle2'],

@@ -50,6 +50,10 @@
     "distance_peak": "Distance at peak",
     "geo_stat": "GEO Stat",
     "geo_sync": "GEO Sync",
+    "status_visible": "Visible",
+    "status_upcoming": "Upcoming",
+    "status_passed": "Passed",
+    "status_dead": "Dead",
     "no_value": "no value",
     "no_data": "No data",
     "no_passes": "No passes detected for the next {{hours}} hours"
