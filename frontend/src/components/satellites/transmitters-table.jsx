@@ -259,6 +259,13 @@ const TransmittersTable = ({ satelliteData, inDialog = false, actionsPortalTarge
         {field: "invert", headerName: t('satellite_info.transmitters.columns.invert'), flex: 0.6, minWidth: 70},
         {field: "baud", headerName: t('satellite_info.transmitters.columns.baud'), flex: 0.8, minWidth: 80},
     ];
+    const gridColumns = inDialog
+        ? columns.map((column) => ({
+            ...column,
+            width: column.minWidth || 120,
+            flex: undefined,
+        }))
+        : columns;
 
     if (!satelliteData || !satelliteData.norad_id) {
         return (
@@ -284,7 +291,7 @@ const TransmittersTable = ({ satelliteData, inDialog = false, actionsPortalTarge
                 <Box sx={{width: '100%'}}>
                     <DataGrid
                         rows={rows}
-                        columns={columns}
+                        columns={gridColumns}
                         initialState={{pagination: {paginationModel}}}
                         pageSizeOptions={[5, 10]}
                         checkboxSelection={true}
@@ -310,7 +317,7 @@ const TransmittersTable = ({ satelliteData, inDialog = false, actionsPortalTarge
                                 fontSize: '14px',
                                 fontWeight: 'bold',
                                 borderBottom: '1px solid',
-                            borderColor: 'border.main',
+                                borderColor: 'border.main',
                             },
                             '& .MuiDataGrid-cell': {
                                 whiteSpace: 'nowrap',
