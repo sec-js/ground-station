@@ -129,6 +129,7 @@ export const useTimelineEvents = ({
 
     // Find which pass (if any) we're hovering over and calculate actual elevation
     let actualElevation = null;
+    let hoveredPass = null;
     for (const pass of timelineData) {
       // If we have elevation_curve data, check against actual curve time range
       if (pass.elevation_curve && pass.elevation_curve.length > 0) {
@@ -149,6 +150,7 @@ export const useTimelineEvents = ({
               // Linear interpolation between the two points
               const t = (timeAtPosition.getTime() - time1) / (time2 - time1);
               actualElevation = point1.elevation + t * (point2.elevation - point1.elevation);
+              hoveredPass = pass;
               found = true;
               break;
             }
@@ -162,6 +164,7 @@ export const useTimelineEvents = ({
             // If hovering on or after the last point, use its elevation
             if (timeAtPosition.getTime() >= lastTime) {
               actualElevation = lastPoint.elevation;
+              hoveredPass = pass;
             }
           }
           break;
@@ -173,12 +176,18 @@ export const useTimelineEvents = ({
           const positionInPass = (percentage - pass.left) / pass.width;
           const elevationRatio = 4 * positionInPass * (1 - positionInPass);
           actualElevation = pass.peak_altitude * elevationRatio;
+          hoveredPass = pass;
           break;
         }
       }
     }
 
-    setHoverPosition({ x: percentage, y: yPercentage, elevation: actualElevation });
+    setHoverPosition({
+      x: percentage,
+      y: yPercentage,
+      elevation: actualElevation,
+      passName: hoveredPass ? hoveredPass.name : null,
+    });
     setHoverTime(timeAtPosition);
   }, [isPanning, timeWindowHours, timeWindowStart, timelineData, panStartXRef, panStartTimeRef, setTimeWindowStart, setHoverPosition, setHoverTime, pastOffsetHours, nextPassesHours, startTime, endTime]);
 
