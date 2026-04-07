@@ -70,7 +70,7 @@ export let handleSetGridEditableTarget = function () {
 };
 
 export const gridLayoutStoreName = 'target-sat-track-layouts';
-const SHARED_RESIZE_HANDLES = ['s', 'sw', 'w', 'se', 'nw', 'ne'];
+const SHARED_RESIZE_HANDLES = ['s', 'sw', 'w', 'se', 'nw', 'ne', 'e'];
 
 // -------------------------------------------------
 // Leaflet icon path fix for React

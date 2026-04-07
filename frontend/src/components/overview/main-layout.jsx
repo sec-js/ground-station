@@ -107,7 +107,7 @@ export let handleSetGridEditableOverview = function () {
 };
 
 export const gridLayoutStoreName = 'global-sat-track-layouts';
-const SHARED_RESIZE_HANDLES = ['s', 'sw', 'w', 'se', 'nw', 'ne'];
+const SHARED_RESIZE_HANDLES = ['s', 'sw', 'w', 'se', 'nw', 'ne', 'e'];
 
 
 // load / save layouts from localStorage

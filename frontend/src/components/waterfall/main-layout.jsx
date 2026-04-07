@@ -41,7 +41,7 @@ export let handleSetGridEditableWaterfall = function () {
 };
 
 export const gridLayoutStoreName = 'waterfall-view-layouts';
-const SHARED_RESIZE_HANDLES = ['s', 'sw', 'w', 'se', 'nw', 'ne'];
+const SHARED_RESIZE_HANDLES = ['s', 'sw', 'w', 'se', 'nw', 'ne', 'e'];
 
 // load / save layouts from localStorage
 function loadLayoutsFromLocalStorage() {
