@@ -37,7 +37,9 @@ import TranscriptionSubtitles from "./transcription-subtitles.jsx";
 
 
 // A global callback for dashboard editing here
-export let handleSetGridEditableWaterfall = function () {
+const setGridEditableWaterfallEvent = 'waterfall-set-grid-editable';
+export const handleSetGridEditableWaterfall = function (value) {
+    window.dispatchEvent(new CustomEvent(setGridEditableWaterfallEvent, {detail: value}));
 };
 
 export const gridLayoutStoreName = 'waterfall-view-layouts';
@@ -139,9 +141,15 @@ const MainLayout = React.memo(function MainLayout() {
         }, {"w": 2, "h": 9, "x": 0, "y": 35, "i": "rig-control", "moved": false, "static": false}]
     };
 
-    // globalize the callback
-    handleSetGridEditableWaterfall = useCallback((value) => {
-        dispatch(setGridEditable(value));
+    useEffect(() => {
+        const onSetGridEditable = (event) => {
+            dispatch(setGridEditable(event.detail));
+        };
+
+        window.addEventListener(setGridEditableWaterfallEvent, onSetGridEditable);
+        return () => {
+            window.removeEventListener(setGridEditableWaterfallEvent, onSetGridEditable);
+        };
     }, [dispatch]);
 
 

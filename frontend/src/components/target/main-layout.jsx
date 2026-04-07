@@ -66,7 +66,9 @@ let MapObject = null;
 const storageMapZoomValueKey = "target-map-zoom-level";
 
 // global callback for dashboard editing here
-export let handleSetGridEditableTarget = function () {
+const setGridEditableTargetEvent = 'target-set-grid-editable';
+export const handleSetGridEditableTarget = function (value) {
+    window.dispatchEvent(new CustomEvent(setGridEditableTargetEvent, {detail: value}));
 };
 
 export const gridLayoutStoreName = 'target-sat-track-layouts';
@@ -408,9 +410,15 @@ const TargetSatelliteLayout = React.memo(function TargetSatelliteLayout() {
         }]
     };
 
-    // globalize the callback
-    handleSetGridEditableTarget = useCallback((value) => {
-        dispatch(setGridEditable(value));
+    useEffect(() => {
+        const onSetGridEditable = (event) => {
+            dispatch(setGridEditable(event.detail));
+        };
+
+        window.addEventListener(setGridEditableTargetEvent, onSetGridEditable);
+        return () => {
+            window.removeEventListener(setGridEditableTargetEvent, onSetGridEditable);
+        };
     }, [dispatch]);
 
     const handleSetMapZoomLevel = useCallback((zoomLevel) => {

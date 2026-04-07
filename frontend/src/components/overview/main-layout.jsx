@@ -104,7 +104,9 @@ const OverviewTimelineWrapper = React.memo(() => {
 });
 
 // global callback for dashboard editing here
-export let handleSetGridEditableOverview = function () {
+const setGridEditableOverviewEvent = 'overview-set-grid-editable';
+export const handleSetGridEditableOverview = function (value) {
+    window.dispatchEvent(new CustomEvent(setGridEditableOverviewEvent, {detail: value}));
 };
 
 export const gridLayoutStoreName = 'global-sat-track-layouts';
@@ -356,9 +358,15 @@ const GlobalSatelliteTrackLayout = React.memo(function GlobalSatelliteTrackLayou
         }]
     };
 
-    // globalize the callback
-    handleSetGridEditableOverview = useCallback((value) => {
-        dispatch(setGridEditable(value));
+    useEffect(() => {
+        const onSetGridEditable = (event) => {
+            dispatch(setGridEditable(event.detail));
+        };
+
+        window.addEventListener(setGridEditableOverviewEvent, onSetGridEditable);
+        return () => {
+            window.removeEventListener(setGridEditableOverviewEvent, onSetGridEditable);
+        };
     }, [dispatch]);
 
     // we load any stored layouts from localStorage or fallback to default
