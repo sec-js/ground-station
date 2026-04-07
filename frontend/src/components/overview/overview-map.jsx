@@ -100,8 +100,7 @@ const overviewVisibleSatelliteIcon = L.divIcon({
     className: satelliteIcon2.options.className,
     html: satelliteIcon2.options.html,
     iconSize: satelliteIcon2.options.iconSize,
-    // Shift visible rotated-square satellite markers 5px in the opposite direction
-    iconAnchor: [10, 15],
+    iconAnchor: [10, 10],
     popupAnchor: satelliteIcon2.options.popupAnchor,
 });
 
@@ -550,6 +549,7 @@ const SatelliteMapContainer = ({handleSetTrackingOnBackend}) => {
                             position={[lat, lon]}
                             altitude={altitude}
                             velocity={velocity}
+                            isVisible={isVisible}
                             trackingSatelliteId={trackingSatelliteId}
                             selectedSatelliteId={selectedSatelliteId}
                             markerEventHandlers={markerEventHandlers}

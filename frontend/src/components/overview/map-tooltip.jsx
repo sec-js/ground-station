@@ -27,6 +27,7 @@ const SatelliteMarker = ({
                              position,
                              altitude,
                              velocity,
+                             isVisible = false,
                              trackingSatelliteId,
                              selectedSatelliteId,
                              markerEventHandlers,
@@ -73,7 +74,7 @@ const SatelliteMarker = ({
         >
             <TooltipComponent
                 direction="bottom"
-                offset={isTracking ? [0, 15] : [0, 5]}
+                offset={[0, isTracking ? 15 : (isVisible ? 10 : 5)]}
                 permanent={true}
                 className={"tooltip-satellite"}
                 interactive={true}
