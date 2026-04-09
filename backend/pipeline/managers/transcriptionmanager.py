@@ -22,6 +22,7 @@ from typing import Any, Dict, Optional
 from audio.deepgramtranscriptionworker import DeepgramTranscriptionWorker
 from audio.geminitranscriptionworker import GeminiTranscriptionWorker
 from common.audio_queue_config import get_audio_queue_config
+from handlers.entities.filebrowser import emit_file_browser_state
 
 
 class TranscriptionManager:
@@ -412,8 +413,6 @@ class TranscriptionManager:
         Emit file browser state update for transcription started.
         """
         try:
-            from handlers.entities.filebrowser import emit_file_browser_state
-
             await emit_file_browser_state(
                 self.sio,
                 {
@@ -432,8 +431,6 @@ class TranscriptionManager:
             transcription_file_path: Path to the transcription file
         """
         try:
-            from handlers.entities.filebrowser import emit_file_browser_state
-
             await emit_file_browser_state(
                 self.sio,
                 {

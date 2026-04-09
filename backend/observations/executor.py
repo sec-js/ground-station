@@ -45,8 +45,10 @@ from observations.tasks.decoderhandler import DecoderHandler
 from observations.tasks.recorderhandler import RecorderHandler
 from observations.tasks.trackerhandler import TrackerHandler
 from observations.tasks.transcriptionhandler import TranscriptionHandler
+from server import runtimestate
 from session.service import session_service
 from session.tracker import session_tracker
+from tasks.registry import get_task
 from vfos.state import INTERNAL_VFO_NUMBER, VFOManager
 
 KNOWN_SATDUMP_PIPELINES = {
@@ -91,10 +93,8 @@ class ObservationExecutor:
 
     @property
     def vfo_manager(self):
-        """Lazy-load VFOManager to avoid circular import issues."""
+        """Return cached VFOManager instance."""
         if self._vfo_manager is None:
-            from vfos.state import VFOManager
-
             self._vfo_manager = VFOManager()
         return self._vfo_manager
 
@@ -727,13 +727,7 @@ class ObservationExecutor:
                     self._iq_recording_info.pop(observation_id, None)
             return
 
-        try:
-            from server.startup import background_task_manager
-            from tasks.registry import get_task
-        except Exception as e:
-            logger.error(f"Failed to import background task manager for SatDump: {e}")
-            return
-
+        background_task_manager = runtimestate.background_task_manager
         if not background_task_manager:
             logger.error("Background task manager not available for SatDump post-processing")
             return

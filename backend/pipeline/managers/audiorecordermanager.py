@@ -18,6 +18,7 @@ import asyncio
 import logging
 
 from common.audio_queue_config import get_audio_queue_config
+from handlers.entities.filebrowser import emit_file_browser_state
 from pipeline.managers.consumerbase import ConsumerManager
 
 
@@ -182,8 +183,6 @@ class AudioRecorderManager(ConsumerManager):
             recording_path: Path to the audio recording file (without extension)
         """
         try:
-            from handlers.entities.filebrowser import emit_file_browser_state
-
             await emit_file_browser_state(
                 self.sio,
                 {

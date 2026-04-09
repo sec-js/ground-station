@@ -16,6 +16,7 @@
 
 import html
 import re
+from datetime import datetime
 from typing import Any, Dict, List
 
 from sqlalchemy import text
@@ -108,7 +109,7 @@ async def backup_table(table_name: str) -> Dict[str, Any]:
             # Generate SQL INSERT statements
             sql_statements = []
             sql_statements.append(f"-- Backup of table {table_name}")
-            sql_statements.append(f"-- Generated at: {__import__('datetime').datetime.now()}")
+            sql_statements.append(f"-- Generated at: {datetime.now()}")
             sql_statements.append(f"-- Total rows: {len(rows)}\n")
 
             for row in rows:
@@ -206,7 +207,7 @@ async def full_backup() -> Dict[str, Any]:
     try:
         sql_statements = []
         sql_statements.append("-- Full Database Backup")
-        sql_statements.append(f"-- Generated at: {__import__('datetime').datetime.now()}")
+        sql_statements.append(f"-- Generated at: {datetime.now()}")
         sql_statements.append("")
 
         # Get CREATE TABLE statements

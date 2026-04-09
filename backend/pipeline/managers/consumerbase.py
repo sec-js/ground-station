@@ -19,6 +19,7 @@ import queue as queue_module
 
 from audio.audiobroadcaster import AudioBroadcaster
 from common.audio_queue_config import get_audio_queue_config
+from server import runtimestate
 
 
 class ConsumerManager:
@@ -199,9 +200,7 @@ class ConsumerManager:
                 # Subscribe the global audio_queue (used by WebAudioStreamer) to this broadcaster
                 # This allows the browser to hear the audio from this VFO
                 try:
-                    from server import startup
-
-                    global_audio_queue = getattr(startup, "audio_queue", None)
+                    global_audio_queue = runtimestate.audio_queue
                     if global_audio_queue:
                         # Subscribe the existing global audio_queue to this broadcaster
                         web_audio_key = f"web_audio:{session_id}:vfo{vfo_number}"

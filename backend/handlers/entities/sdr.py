@@ -25,6 +25,7 @@ from demodulators.fmdemodulator import FMDemodulator
 from demodulators.fmstereodemodulator import FMStereoDemodulator
 from demodulators.ssbdemodulator import SSBDemodulator
 from handlers.entities.filebrowser import emit_file_browser_state
+from handlers.entities.transcriptionhelpers import fetch_transmitter_and_satellite
 from pipeline.orchestration.processmanager import process_manager
 from server.audiorecorder import start_audio_recording, stop_audio_recording
 from server.recorder import start_recording, stop_recording
@@ -713,10 +714,7 @@ def _auto_start_transcription(sdr_id, session_id, vfo_number, vfo_state, logger)
                 transmitter_dict = None
 
                 if vfo_state.locked_transmitter_id and vfo_state.locked_transmitter_id != "none":
-                    # Import helper from vfo.py
-                    from handlers.entities.vfo import _fetch_transmitter_and_satellite
-
-                    transmitter_dict, satellite_dict = await _fetch_transmitter_and_satellite(
+                    transmitter_dict, satellite_dict = await fetch_transmitter_and_satellite(
                         vfo_state.locked_transmitter_id
                     )
 

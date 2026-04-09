@@ -579,8 +579,6 @@ class DecoderManager:
                 else:
                     self.logger.debug(f"{decoder_name} process cleaned up successfully")
 
-            import threading
-
             cleanup_thread = threading.Thread(
                 target=_async_decoder_cleanup,
                 name=f"cleanup-{decoder_name}-{session_id}",
@@ -621,8 +619,6 @@ class DecoderManager:
 
                 if should_stop_demod:
                     # Get demodulator type name from the instance class
-                    from pipeline.registries.demodulatorregistry import demodulator_registry
-
                     demod_class_name = type(vfo_demod).__name__
                     demod_type = "UNKNOWN"
                     for demod_name in demodulator_registry.list_demodulators():
@@ -901,9 +897,7 @@ class DecoderManager:
                     return True
                 # backoff then retry
                 try:
-                    import time as _time
-
-                    _time.sleep(backoffs[min(attempt + 1, len(backoffs) - 1)])
+                    time.sleep(backoffs[min(attempt + 1, len(backoffs) - 1)])
                 except Exception:
                     pass
 
