@@ -17,7 +17,7 @@
  *
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { DataGrid, gridClasses } from '@mui/x-data-grid';
 import {
@@ -57,19 +57,8 @@ import {
     fetchMonitoredSatellites,
 } from './scheduler-slice.jsx';
 import RegenerationPreviewDialog from './regeneration-preview-dialog.jsx';
+import { toRowSelectionModel, toSelectedIds } from '../../utils/datagrid-selection.js';
 import { getFlattenedTasks, getSessionSdrs } from './session-utils.js';
-
-const toSelectedIds = (selectionModel) => {
-    if (Array.isArray(selectionModel)) {
-        return selectionModel;
-    }
-
-    if (selectionModel?.ids instanceof Set) {
-        return Array.from(selectionModel.ids);
-    }
-
-    return [];
-};
 
 const MonitoredSatellitesTable = () => {
     const dispatch = useDispatch();
@@ -86,6 +75,7 @@ const MonitoredSatellitesTable = () => {
 
     const monitoredSatellites = useSelector((state) => state.scheduler?.monitoredSatellites || []);
     const loading = useSelector((state) => state.scheduler?.monitoredSatellitesLoading || false);
+    const rowSelectionModel = useMemo(() => toRowSelectionModel(selectedIds), [selectedIds]);
 
     useEffect(() => {
         if (socket) {
@@ -212,6 +202,7 @@ const MonitoredSatellitesTable = () => {
             renderCell: (params) => (
                 <Switch
                     checked={params.value}
+                    onClick={(e) => e.stopPropagation()}
                     onChange={() => handleToggleEnabled(params.row.id, params.value)}
                     size="small"
                 />
@@ -383,7 +374,7 @@ const MonitoredSatellitesTable = () => {
                     columns={columns}
                     loading={loading}
                     checkboxSelection
-                    disableRowSelectionOnClick
+                    rowSelectionModel={rowSelectionModel}
                     onRowSelectionModelChange={(newSelection) => {
                         setSelectedIds(toSelectedIds(newSelection));
                     }}

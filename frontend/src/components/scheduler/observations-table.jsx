@@ -65,6 +65,7 @@ import {
 import { getTimeFromISO, humanizeFutureDateInMinutes } from '../common/common.jsx';
 import { useUserTimeSettings } from '../../hooks/useUserTimeSettings.jsx';
 import { formatDateTime } from '../../utils/date-time.js';
+import { toRowSelectionModel, toSelectedIds } from '../../utils/datagrid-selection.js';
 import Button from '@mui/material/Button';
 import ObservationsTimeline from './observations-timeline-svg.jsx';
 import { getFlattenedTasks, getSessionSdrs } from './session-utils.js';
@@ -86,22 +87,6 @@ const getStatusColor = (status) => {
         default:
             return 'default';
     }
-};
-
-const toSelectedIds = (selectionModel, allRowIds = []) => {
-    if (Array.isArray(selectionModel)) {
-        return selectionModel;
-    }
-
-    if (selectionModel?.type === 'exclude' && selectionModel?.ids instanceof Set) {
-        return allRowIds.filter((id) => !selectionModel.ids.has(id));
-    }
-
-    if (selectionModel?.type === 'include' && selectionModel?.ids instanceof Set) {
-        return Array.from(selectionModel.ids);
-    }
-
-    return [];
 };
 
 // Time formatter component that updates every second
@@ -141,10 +126,7 @@ const ObservationsTable = () => {
     const openDataDialog = useSelector((state) => state.scheduler?.openObservationDataDialog || false);
     const selectedObservationForData = useSelector((state) => state.scheduler?.selectedObservationForData || null);
     const { timezone, locale } = useUserTimeSettings();
-    const rowSelectionModel = useMemo(
-        () => ({ type: 'include', ids: new Set(selectedIds) }),
-        [selectedIds]
-    );
+    const rowSelectionModel = useMemo(() => toRowSelectionModel(selectedIds), [selectedIds]);
 
     // Filter observations based on status filters
     const observations = allObservations.filter(obs => statusFilters[obs.status]);
@@ -332,6 +314,7 @@ const ObservationsTable = () => {
             renderCell: (params) => (
                 <Switch
                     checked={params.value}
+                    onClick={(e) => e.stopPropagation()}
                     onChange={() => handleToggleEnabled(params.row.id, params.value)}
                     disabled={params.row.status === 'running'}
                     size="small"
@@ -606,13 +589,10 @@ const ObservationsTable = () => {
                     columns={columns}
                     loading={loading}
                     checkboxSelection
-                    disableRowSelectionOnClick
                     rowSelectionModel={rowSelectionModel}
                     onRowSelectionModelChange={(newSelection) => {
                         dispatch(
-                            setSelectedObservationIds(
-                                toSelectedIds(newSelection, observations.map((observation) => observation.id))
-                            )
+                            setSelectedObservationIds(toSelectedIds(newSelection))
                         );
                     }}
                     getRowClassName={(params) => {
