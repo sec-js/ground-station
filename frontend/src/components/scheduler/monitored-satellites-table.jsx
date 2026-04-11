@@ -178,22 +178,6 @@ const MonitoredSatellitesTable = () => {
         }
     };
 
-    const NoRowsOverlay = () => (
-        <Stack
-            spacing={1}
-            alignItems="center"
-            justifyContent="center"
-            sx={{ height: '100%', px: 2, textAlign: 'center' }}
-        >
-            <Typography variant="body2" color="text.secondary">
-                No monitored satellites configured.
-            </Typography>
-            <Button size="small" variant="outlined" onClick={handleAdd}>
-                Add monitored satellite
-            </Button>
-        </Stack>
-    );
-
     const columns = [
         {
             field: 'enabled',
@@ -368,34 +352,32 @@ const MonitoredSatellitesTable = () => {
                 Satellites in this list will automatically generate scheduled observations for all upcoming passes that meet the specified criteria (minimum elevation, lookahead window).
             </Alert>
 
-            <Box sx={{ flexGrow: 1, width: '100%', minHeight: 0, mt: 2, display: 'flex', overflow: 'hidden' }}>
+            <Box sx={{ flexGrow: 1, width: '100%', minHeight: 0 }}>
                 <DataGrid
                     rows={monitoredSatellites}
                     columns={columns}
                     loading={loading}
                     checkboxSelection
+                    disableRowSelectionExcludeModel
                     rowSelectionModel={rowSelectionModel}
                     onRowSelectionModelChange={(newSelection) => {
                         setSelectedIds(toSelectedIds(newSelection));
                     }}
                     initialState={{
                         pagination: {
-                            paginationModel: { pageSize: 10 },
+                            paginationModel: { pageSize: 25 },
                         },
                         sorting: {
                             sortModel: [{ field: 'satellite', sort: 'asc' }],
                         },
                     }}
-                    pageSizeOptions={[5, 10, 25, {value: -1, label: 'All'}]}
-                    slots={{
-                        noRowsOverlay: NoRowsOverlay,
-                    }}
+                    pageSizeOptions={[10, 25, 50, {value: -1, label: 'All'}]}
                     localeText={{
                         noRowsLabel: 'No monitored satellites'
                     }}
                     sx={{
                         border: 0,
-                        height: '100%',
+                        '--DataGrid-overlayHeight': '100%',
                         [`& .${gridClasses.cell}:focus, & .${gridClasses.cell}:focus-within`]: {
                             outline: 'none',
                         },
@@ -432,6 +414,9 @@ const MonitoredSatellitesTable = () => {
                             fontSize: '0.8125rem',
                             fontWeight: 700,
                             letterSpacing: '0.02em',
+                        },
+                        '& .MuiDataGrid-main, & .MuiDataGrid-virtualScroller, & .MuiDataGrid-virtualScrollerContent, & .MuiDataGrid-overlayWrapper, & .MuiDataGrid-overlayWrapperInner, & .MuiDataGrid-overlay': {
+                            backgroundColor: 'background.paper',
                         },
                         '& .MuiDataGrid-overlay': {
                             fontSize: '0.875rem',

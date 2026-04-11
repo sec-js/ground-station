@@ -284,28 +284,6 @@ const ObservationsTable = () => {
         });
     };
 
-    const NoRowsOverlay = () => (
-        <Stack
-            spacing={1}
-            alignItems="center"
-            justifyContent="center"
-            sx={{ height: '100%', px: 2, textAlign: 'center' }}
-        >
-            <Typography variant="body2" color="text.secondary">
-                {allObservations.length === 0
-                    ? 'No scheduled observations yet.'
-                    : 'No observations match the selected status filters.'}
-            </Typography>
-            <Button
-                size="small"
-                variant="outlined"
-                onClick={allObservations.length === 0 ? handleAdd : handleShowAllStatuses}
-            >
-                {allObservations.length === 0 ? 'Create observation' : 'Show all statuses'}
-            </Button>
-        </Stack>
-    );
-
     const columns = [
         {
             field: 'enabled',
@@ -589,6 +567,7 @@ const ObservationsTable = () => {
                     columns={columns}
                     loading={loading}
                     checkboxSelection
+                    disableRowSelectionExcludeModel
                     rowSelectionModel={rowSelectionModel}
                     onRowSelectionModelChange={(newSelection) => {
                         dispatch(
@@ -628,9 +607,6 @@ const ObservationsTable = () => {
                         },
                     }}
                     pageSizeOptions={[10, 25, 50, {value: -1, label: 'All'}]}
-                    slots={{
-                        noRowsOverlay: NoRowsOverlay,
-                    }}
                     localeText={{
                         noRowsLabel: 'No scheduled observations'
                     }}
