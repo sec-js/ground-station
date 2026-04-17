@@ -498,7 +498,6 @@ const MonitoredCelestialGridIsland = ({ rows = [], loading = false }) => {
                     getRowId={(row) => row.id}
                     loading={loading}
                     density="compact"
-                    disableRowSelectionOnClick
                     columnVisibilityModel={tableColumnVisibility}
                     onColumnVisibilityModelChange={(model) => dispatch(setMonitoredTableColumnVisibility(model))}
                     paginationModel={{ pageSize: tablePageSize, page }}
