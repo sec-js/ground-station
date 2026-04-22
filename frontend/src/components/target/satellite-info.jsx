@@ -17,7 +17,7 @@
  *
  */
 
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import {
@@ -38,7 +38,9 @@ import {
     Typography,
     Divider,
     Chip,
-    Button
+    Button,
+    Tooltip,
+    IconButton
 } from '@mui/material';
 import SatelliteAltIcon from '@mui/icons-material/SatelliteAlt';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -53,16 +55,42 @@ import UpdateIcon from '@mui/icons-material/Update';
 import BusinessIcon from '@mui/icons-material/Business';
 import RadioIcon from '@mui/icons-material/Radio';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import EditIcon from '@mui/icons-material/Edit';
+import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import Grid from "@mui/material/Grid";
 import React from "react";
+import TransmittersDialog from "../satellites/transmitters-dialog.jsx";
+import SatelliteEditDialog from "../satellites/satellite-edit-dialog.jsx";
+import {fetchSatellite} from "./target-slice.jsx";
+import {useSocket} from "../common/socket.jsx";
 // ElevationDisplay not used in target page; using satelliteData for elevation per request
 
 const TargetSatelliteInfoIsland = () => {
     const { t } = useTranslation('target');
+    const { t: tSat } = useTranslation('satellites');
+    const dispatch = useDispatch();
+    const { socket } = useSocket();
     const { satelliteData, gridEditable, satelliteId } = useSelector((state) => state.targetSatTrack);
     const selectedSatellitePositions = useSelector(state => state.overviewSatTrack.selectedSatellitePositions);
     const navigate = useNavigate();
     const transmitters = satelliteData?.transmitters || [];
+    const [satelliteEditDialogOpen, setSatelliteEditDialogOpen] = React.useState(false);
+    const [transmittersDialogOpen, setTransmittersDialogOpen] = React.useState(false);
+    const selectedNoradId = satelliteData?.details?.norad_id || satelliteId || null;
+    const selectedSatelliteName = satelliteData?.details?.name || '';
+    const satelliteDialogData = {
+        ...(satelliteData?.details || {}),
+        norad_id: selectedNoradId,
+        name: selectedSatelliteName,
+        transmitters,
+    };
+
+    const handleSatelliteSaved = () => {
+        if (!selectedNoradId) {
+            return;
+        }
+        dispatch(fetchSatellite({ socket, noradId: selectedNoradId }));
+    };
 
     // Mini circular gauge for angular measurements
     const CircularGauge = ({ value, max, size = 36 }) => {
@@ -221,15 +249,39 @@ const TargetSatelliteInfoIsland = () => {
                             boxShadow: (theme) => `0 0 8px ${satelliteData && satelliteData['details'] && satelliteData['details']['status'] === 'alive' ? theme.palette.success.main : theme.palette.error.main}`
                         }} />
                         <Box sx={{ minWidth: 0, flex: 1 }}>
-                            <Typography
-                                variant="subtitle1"
-                                noWrap
-                                sx={{ fontWeight: 700, letterSpacing: '0.3px' }}
-                            >
-                                {satelliteData && satelliteData['details']
-                                    ? `${satelliteData['details']['name']}${satelliteData['details']['name_other'] ? ` • ${satelliteData['details']['name_other']}` : ''}`
-                                    : "NO DATA"}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+                                <Typography
+                                    variant="subtitle1"
+                                    noWrap
+                                    sx={{ fontWeight: 700, letterSpacing: '0.3px', minWidth: 0 }}
+                                >
+                                    {satelliteData && satelliteData['details']
+                                        ? `${satelliteData['details']['name']}${satelliteData['details']['name_other'] ? ` • ${satelliteData['details']['name_other']}` : ''}`
+                                        : "NO DATA"}
+                                </Typography>
+                                <Tooltip title="Edit Details">
+                                    <span>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setSatelliteEditDialogOpen(true)}
+                                            disabled={!selectedNoradId}
+                                        >
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                                <Tooltip title="Edit Transmitters">
+                                    <span>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setTransmittersDialogOpen(true)}
+                                            disabled={!selectedNoradId}
+                                        >
+                                            <RadioButtonCheckedIcon fontSize="small" />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            </Box>
                         </Box>
                     </Box>
                     {satelliteData && satelliteData['details'] && (
@@ -702,13 +754,55 @@ const TargetSatelliteInfoIsland = () => {
 
                 {/* View Details Button */}
                 {satelliteData && satelliteData['details'] && satelliteData['details']['norad_id'] && (
-                    <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'center' }}>
+                    <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 0.5, width: '100%' }}>
+                        <Button
+                            variant="text"
+                            size="small"
+                            startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+                            onClick={() => setSatelliteEditDialogOpen(true)}
+                            disabled={!selectedNoradId}
+                            sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: '0.65rem',
+                                textTransform: 'none',
+                                color: 'text.secondary',
+                                '&:hover': {
+                                    color: 'primary.main',
+                                    bgcolor: 'transparent'
+                                }
+                            }}
+                        >
+                            Edit Details
+                        </Button>
+                        <Button
+                            variant="text"
+                            size="small"
+                            startIcon={<RadioButtonCheckedIcon sx={{ fontSize: 14 }} />}
+                            onClick={() => setTransmittersDialogOpen(true)}
+                            disabled={!selectedNoradId}
+                            sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontSize: '0.65rem',
+                                textTransform: 'none',
+                                color: 'text.secondary',
+                                '&:hover': {
+                                    color: 'primary.main',
+                                    bgcolor: 'transparent'
+                                }
+                            }}
+                        >
+                            Edit Transmitters
+                        </Button>
                         <Button
                             variant="text"
                             size="small"
                             startIcon={<InfoOutlinedIcon sx={{ fontSize: 14 }} />}
                             onClick={() => navigate(`/satellite/${satelliteData['details']['norad_id']}`)}
                             sx={{
+                                flex: 1,
+                                minWidth: 0,
                                 fontSize: '0.65rem',
                                 textTransform: 'none',
                                 color: 'text.secondary',
@@ -723,6 +817,22 @@ const TargetSatelliteInfoIsland = () => {
                     </Box>
                 )}
             </Box>
+            <SatelliteEditDialog
+                open={satelliteEditDialogOpen}
+                onClose={() => setSatelliteEditDialogOpen(false)}
+                satelliteData={satelliteDialogData}
+                onSaved={handleSatelliteSaved}
+            />
+            <TransmittersDialog
+                open={transmittersDialogOpen}
+                onClose={() => setTransmittersDialogOpen(false)}
+                title={tSat('satellite_database.edit_transmitters_title', {
+                    name: selectedSatelliteName || selectedNoradId || '',
+                })}
+                satelliteData={satelliteDialogData}
+                variant="paper"
+                widthOffsetPx={20}
+            />
         </Box>
     );
 }
