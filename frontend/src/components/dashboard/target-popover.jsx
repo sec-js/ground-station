@@ -44,6 +44,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { formatLegibleDateTime } from "../common/common.jsx";
 import { useUserTimeSettings } from '../../hooks/useUserTimeSettings.jsx';
 import { formatDate as formatDateHelper } from '../../utils/date-time.js';
+import TargetBadge from "../common/target-badge.jsx";
 
 const EMPTY_OPEN_TARGET_DATA = Object.freeze({
     satelliteData: {
@@ -150,6 +151,7 @@ const SatelliteInfoPopover = () => {
             const isActive = instanceTrackerId === trackerId;
             const minElevation = rotator?.minel ?? 0;
             const isTracking = noradId != null && tracking?.norad_id === noradId;
+            const isTrackingActive = Boolean(view?.rigData?.tracking || view?.rotatorData?.tracking);
             return {
                 trackerId: instanceTrackerId,
                 targetNumber,
@@ -159,6 +161,7 @@ const SatelliteInfoPopover = () => {
                 isActive,
                 minElevation,
                 isTracking,
+                isTrackingActive,
             };
         });
     }, [trackerInstances, trackerViews, trackerId]);
@@ -624,11 +627,9 @@ const SatelliteInfoPopover = () => {
                                         }}
                                     >
                                         <Stack direction="row" spacing={0.6} alignItems="center" sx={{ mb: 0.6 }}>
-                                            <Chip
-                                                size="small"
-                                                label={`Target ${row.targetNumber}`}
-                                                color="default"
-                                                variant="outlined"
+                                            <TargetBadge
+                                                targetNumber={row.targetNumber}
+                                                tracking={row.isTrackingActive}
                                             />
                                             <Chip
                                                 size="small"

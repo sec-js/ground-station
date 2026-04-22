@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { Box, Chip, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import TargetBadge from './target-badge.jsx';
 
 const FleetTargetRow = React.memo(function FleetTargetRow({
     targetNumber,
+    trackingActive = false,
     satName = 'No satellite',
     satNorad = 'none',
     elevation = null,
@@ -27,14 +29,11 @@ const FleetTargetRow = React.memo(function FleetTargetRow({
             }}
         >
             <Stack direction="row" spacing={0.6} alignItems="center" useFlexGap flexWrap="wrap">
-                <Chip
-                    size="small"
-                    clickable
-                    color={isActive ? 'primary' : 'default'}
-                    variant={isActive ? 'filled' : 'outlined'}
-                    label={`Target ${targetNumber}`}
+                <TargetBadge
+                    targetNumber={targetNumber}
+                    tracking={trackingActive}
+                    clickable={Boolean(onFocus)}
                     onClick={onFocus}
-                    sx={{ '& .MuiChip-label': { fontWeight: 'bold', fontSize: '12px' } }}
                 />
                 <Typography
                     variant="caption"

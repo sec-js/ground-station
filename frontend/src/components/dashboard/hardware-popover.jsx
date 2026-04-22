@@ -368,6 +368,7 @@ const HardwareSettingsPopover = () => {
                             <Box key={row.trackerId}>
                                 <FleetTargetRow
                                     targetNumber={row.targetNumber}
+                                    trackingActive={Boolean(row.rigData?.tracking || row.rotatorData?.tracking)}
                                     satName={row.satName}
                                     satNorad={row.satNorad}
                                     elevation={null}
