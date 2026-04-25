@@ -704,14 +704,9 @@ export default function FilebrowserMain() {
 
     const isLoading = filesLoading;
     const hasError = filesError;
-
-    if (isLoading && files.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
+    // Keep the file browser shell visible while loading; only gate the results region.
+    const showInitialLoading = isLoading && files.length === 0;
+    const showRefreshOverlay = isLoading && files.length > 0;
 
     return (
         <Box sx={{ p: 2 }}>
@@ -964,50 +959,55 @@ export default function FilebrowserMain() {
                 </Alert>
             )}
 
-            {displayItems.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                        {t('no_files.title', 'No files found')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {!filters.showRecordings && !filters.showSnapshots && !filters.showDecoded && !filters.showAudio && !filters.showTranscriptions
-                            ? t('no_files.message_filter', 'Enable at least one filter to see files')
-                            : t('no_files.message_empty', 'Take snapshots or record IQ data from the waterfall view')}
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        startIcon={<RefreshIcon />}
-                        onClick={handleRefresh}
-                    >
-                        {t('refresh', 'Refresh')}
-                    </Button>
-                </Box>
-            ) : viewMode === 'table' ? (
-                <FileTableView
-                    filesByDay={filesByDay}
-                    selectionMode={selectionMode}
-                    selectedItems={selectedItems}
-                    onToggleSelection={handleToggleSelection}
-                    onShowDetails={handleShowDetails}
-                    onDownload={handleDownload}
-                    onDelete={handleDelete}
-                    onProcessingMenu={handleOpenProcessingMenu}
-                    timezone={timezone}
-                />
-            ) : (
-            <Box sx={{
-                display: 'grid',
-                // Responsive columns: mobile→1, tablet→2–3, desktop→4–5
-                gridTemplateColumns: {
-                    xs: 'repeat(1, minmax(0, 1fr))',
-                    sm: 'repeat(2, minmax(0, 1fr))',
-                    md: 'repeat(5, minmax(0, 1fr))',
-                    lg: 'repeat(5, minmax(0, 1fr))',
-                    xl: 'repeat(5, minmax(0, 1fr))',
-                },
-                gap: 2
-            }}>
-                    {displayItems.map((item) => {
+            <Box sx={{ position: 'relative', minHeight: 320 }}>
+                {showInitialLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 320 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : displayItems.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', py: 8 }}>
+                        <Typography variant="h6" color="text.secondary" gutterBottom>
+                            {t('no_files.title', 'No files found')}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {!filters.showRecordings && !filters.showSnapshots && !filters.showDecoded && !filters.showAudio && !filters.showTranscriptions
+                                ? t('no_files.message_filter', 'Enable at least one filter to see files')
+                                : t('no_files.message_empty', 'Take snapshots or record IQ data from the waterfall view')}
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            startIcon={<RefreshIcon />}
+                            onClick={handleRefresh}
+                        >
+                            {t('refresh', 'Refresh')}
+                        </Button>
+                    </Box>
+                ) : viewMode === 'table' ? (
+                    <FileTableView
+                        filesByDay={filesByDay}
+                        selectionMode={selectionMode}
+                        selectedItems={selectedItems}
+                        onToggleSelection={handleToggleSelection}
+                        onShowDetails={handleShowDetails}
+                        onDownload={handleDownload}
+                        onDelete={handleDelete}
+                        onProcessingMenu={handleOpenProcessingMenu}
+                        timezone={timezone}
+                    />
+                ) : (
+                <Box sx={{
+                    display: 'grid',
+                    // Responsive columns: mobile→1, tablet→2–3, desktop→4–5
+                    gridTemplateColumns: {
+                        xs: 'repeat(1, minmax(0, 1fr))',
+                        sm: 'repeat(2, minmax(0, 1fr))',
+                        md: 'repeat(5, minmax(0, 1fr))',
+                        lg: 'repeat(5, minmax(0, 1fr))',
+                        xl: 'repeat(5, minmax(0, 1fr))',
+                    },
+                    gap: 2
+                }}>
+                        {displayItems.map((item) => {
                         const isRecording = item.type === 'recording';
                         const key = isRecording ? item.name : (item.type === 'decoded_folder' ? item.foldername : item.filename);
                         const isSelected = selectedItems.includes(key);
@@ -1716,9 +1716,28 @@ export default function FilebrowserMain() {
                                     </CardActions>
                                 </Card>
                         );
-                    })}
-                </Box>
-            )}
+                        })}
+                    </Box>
+                )}
+                {showRefreshOverlay && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.36)' : 'rgba(255, 255, 255, 0.56)'),
+                            backdropFilter: 'blur(1px)',
+                            borderRadius: 1,
+                            pointerEvents: 'none',
+                            zIndex: 2,
+                        }}
+                    >
+                        <CircularProgress size={28} />
+                    </Box>
+                )}
+            </Box>
 
             {/* Pagination Controls */}
             {total > pageSize && (
