@@ -116,7 +116,8 @@ const HardwareSettingsPopover = () => {
 
     const handleClose = () => {
         setAnchorEl(null);
-        setActiveIcon(null);
+        // Keep the selected panel until the popover fully closes to avoid
+        // a brief fallback render of the other panel during exit animation.
     };
 
     const fleetHardwareSummary = React.useMemo(() => {
@@ -369,7 +370,11 @@ const HardwareSettingsPopover = () => {
                 <Stack spacing={0.65} sx={{ mt: 0.7 }}>
                     {fleetRows.map((row) => {
                         const statusLabel = isRotatorPanel
-                            ? (row.rotatorData?.tracking ? 'Tracking' : (row.rotatorData?.connected ? 'Connected' : 'Disconnected'))
+                            ? (
+                                row.rotatorData?.slewing
+                                    ? 'Slewing'
+                                    : (row.rotatorData?.tracking ? 'Tracking' : (row.rotatorData?.connected ? 'Connected' : 'Disconnected'))
+                            )
                             : (row.rigData?.tracking ? 'Tracking' : (row.rigData?.connected ? 'Connected' : 'Disconnected'));
                         const warningPillLabel = (() => {
                             if (statusLabel === 'Disconnected') {
@@ -480,23 +485,70 @@ const HardwareSettingsPopover = () => {
                                                 </Typography>
                                             </Box>
                                             {!isRotatorPanel && (
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
+                                                <Box
                                                     sx={{
-                                                        display: 'block',
-                                                        mt: 0.15,
+                                                        mt: 0.25,
+                                                        display: 'grid',
+                                                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                                                        columnGap: 1.1,
+                                                        rowGap: 0.1,
                                                         fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                                                         fontFeatureSettings: '"tnum" 1',
-                                                        fontSize: '12px',
-                                                        lineHeight: 1.3,
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
                                                     }}
                                                 >
-                                                    {`VFO1 ${rigVfo1} | VFO2 ${rigVfo2} | Df ${rigDopplerShift} | Obs ${rigDownlinkObserved}`}
-                                                </Typography>
+                                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'baseline', columnGap: 0.6, minWidth: 0 }}>
+                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ fontSize: '12px', lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+                                                            VFO 1 Frequency
+                                                        </Typography>
+                                                        <Typography
+                                                            component="span"
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{ fontSize: '12px', lineHeight: 1.3, textAlign: 'right', justifySelf: 'end', minWidth: 0, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+                                                        >
+                                                            {rigVfo1}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'baseline', columnGap: 0.6, minWidth: 0 }}>
+                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ fontSize: '12px', lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+                                                            VFO 2 Frequency
+                                                        </Typography>
+                                                        <Typography
+                                                            component="span"
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{ fontSize: '12px', lineHeight: 1.3, textAlign: 'right', justifySelf: 'end', minWidth: 0, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+                                                        >
+                                                            {rigVfo2}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'baseline', columnGap: 0.6, minWidth: 0 }}>
+                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ fontSize: '12px', lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+                                                            Doppler Shift
+                                                        </Typography>
+                                                        <Typography
+                                                            component="span"
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{ fontSize: '12px', lineHeight: 1.3, textAlign: 'right', justifySelf: 'end', minWidth: 0, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+                                                        >
+                                                            {rigDopplerShift}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', alignItems: 'baseline', columnGap: 0.6, minWidth: 0 }}>
+                                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ fontSize: '12px', lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+                                                            Downlink Observed
+                                                        </Typography>
+                                                        <Typography
+                                                            component="span"
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{ fontSize: '12px', lineHeight: 1.3, textAlign: 'right', justifySelf: 'end', minWidth: 0, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+                                                        >
+                                                            {rigDownlinkObserved}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
                                             )}
                                         </Box>
                                     )}
@@ -506,7 +558,7 @@ const HardwareSettingsPopover = () => {
                                                 <Chip
                                                     size="small"
                                                     label={statusLabel}
-                                                    color={statusLabel === 'Tracking' ? 'success' : (statusLabel === 'Connected' ? 'success' : 'default')}
+                                                    color={statusLabel === 'Slewing' ? 'warning' : (statusLabel === 'Tracking' ? 'success' : (statusLabel === 'Connected' ? 'success' : 'default'))}
                                                     variant={statusLabel === 'Disconnected' ? 'outlined' : 'filled'}
                                                     sx={{
                                                         maxWidth: 110,
