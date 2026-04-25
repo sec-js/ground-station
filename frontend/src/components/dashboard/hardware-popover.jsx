@@ -172,8 +172,10 @@ const HardwareSettingsPopover = () => {
             }
         });
 
-        summary.rotator.issueCount = summary.rotator.warningCount + summary.rotator.disconnectedCount;
-        summary.rig.issueCount = summary.rig.warningCount + summary.rig.disconnectedCount;
+        // Badge bubbles represent warning/error attention only.
+        // Disconnected is treated as neutral state and is reported in tooltip text instead.
+        summary.rotator.issueCount = summary.rotator.warningCount;
+        summary.rig.issueCount = summary.rig.warningCount;
         return summary;
     }, [trackerInstances, trackerViews]);
 
@@ -185,7 +187,6 @@ const HardwareSettingsPopover = () => {
     }, [connected, hasConfiguredTargets]);
 
     const getFleetBadgeColor = useCallback((summaryByType) => {
-        if (summaryByType.disconnectedCount > 0) return 'error';
         if (summaryByType.warningCount > 0) return 'warning';
         return 'default';
     }, []);
@@ -421,8 +422,8 @@ const HardwareSettingsPopover = () => {
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         whiteSpace: 'nowrap',
-                                                        fontSize: '11px',
-                                                        lineHeight: 1.25,
+                                                        fontSize: '13px',
+                                                        lineHeight: 1.35,
                                                     }}
                                                 >
                                                     {isRotatorPanel ? row.rotatorName : row.rigName}
@@ -436,8 +437,8 @@ const HardwareSettingsPopover = () => {
                                                         fontFeatureSettings: '"tnum" 1',
                                                         whiteSpace: 'nowrap',
                                                         textAlign: 'right',
-                                                        fontSize: '12px',
-                                                        lineHeight: 1.25,
+                                                        fontSize: '14px',
+                                                        lineHeight: 1.35,
                                                     }}
                                                 >
                                                     {isRotatorPanel ? `Az ${az}° El ${el}°` : `Freq ${rigFrequency} Hz`}
@@ -452,8 +453,8 @@ const HardwareSettingsPopover = () => {
                                                         mt: 0.15,
                                                         fontFamily: 'Monaco, Consolas, "Courier New", monospace',
                                                         fontFeatureSettings: '"tnum" 1',
-                                                        fontSize: '11px',
-                                                        lineHeight: 1.25,
+                                                        fontSize: '12px',
+                                                        lineHeight: 1.3,
                                                         whiteSpace: 'nowrap',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
