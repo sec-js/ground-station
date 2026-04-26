@@ -61,6 +61,7 @@ import LCDFrequencyDisplay from "../common/lcd-frequency-display.jsx";
 import SettingsIcon from '@mui/icons-material/Settings';
 import { RIG_STATES, TRACKER_COMMAND_SCOPES, TRACKER_COMMAND_STATUS } from '../target/tracking-constants.js';
 import RigQuickEditDialog from "./rig-quick-edit-dialog.jsx";
+import { resolveRigLedStatus, RIG_LED_STATUS } from "../common/hardware-status.js";
 
 
 const RigControl = React.memo(function RigControl({ trackerId: trackerIdOverride = "" }) {
@@ -205,28 +206,48 @@ const RigControl = React.memo(function RigControl({ trackerId: trackerIdOverride
         return usage;
     }, [trackerInstances]);
 
+    const resolvedRigLedStatus = React.useMemo(() => {
+        return resolveRigLedStatus({
+            rigId: effectiveSelectedRadioRigValue,
+            rigData: effectiveRigData,
+            trackingState: effectiveTrackingState,
+        });
+    }, [effectiveSelectedRadioRigValue, effectiveRigData, effectiveTrackingState]);
+
     const rigStatusChip = React.useMemo(() => {
         if (!isSocketConnected) {
-            return { label: t('rig_control.not_connected', { defaultValue: 'Not connected' }), color: 'default' };
+            return { label: t('common.disconnected', { ns: 'common', defaultValue: 'Disconnected' }), color: 'default' };
         }
-        if (effectiveRigData?.tracking) {
-            return { label: 'Tracking', color: 'success' };
+        switch (resolvedRigLedStatus) {
+            case RIG_LED_STATUS.TRACKING:
+                return { label: 'Tracking', color: 'success' };
+            case RIG_LED_STATUS.STOPPED:
+                return { label: 'Stopped', color: 'info' };
+            case RIG_LED_STATUS.CONNECTED:
+                return { label: t('rig_control.connected', { defaultValue: 'Connected' }), color: 'success' };
+            case RIG_LED_STATUS.NONE:
+            case RIG_LED_STATUS.DISCONNECTED:
+            case RIG_LED_STATUS.UNKNOWN:
+            default:
+                return { label: t('common.disconnected', { ns: 'common', defaultValue: 'Disconnected' }), color: 'default' };
         }
-        if (effectiveRigData?.stopped) {
-            return { label: 'Stopped', color: 'warning' };
-        }
-        if (effectiveRigData?.connected) {
-            return { label: t('rig_control.connected', { defaultValue: 'Connected' }), color: 'success' };
-        }
-        return { label: t('rig_control.not_connected', { defaultValue: 'Not connected' }), color: 'error' };
-    }, [isSocketConnected, effectiveRigData?.tracking, effectiveRigData?.stopped, effectiveRigData?.connected, t]);
+    }, [isSocketConnected, resolvedRigLedStatus, t]);
     const rigStatusLedColor = React.useMemo(() => {
         if (!isSocketConnected) return 'action.disabled';
-        if (effectiveRigData?.tracking) return 'success.main';
-        if (effectiveRigData?.stopped) return 'warning.main';
-        if (effectiveRigData?.connected) return 'success.main';
-        return 'error.main';
-    }, [isSocketConnected, effectiveRigData?.tracking, effectiveRigData?.stopped, effectiveRigData?.connected]);
+        switch (resolvedRigLedStatus) {
+            case RIG_LED_STATUS.TRACKING:
+                return 'success.main';
+            case RIG_LED_STATUS.STOPPED:
+                return 'info.main';
+            case RIG_LED_STATUS.CONNECTED:
+                return 'success.main';
+            case RIG_LED_STATUS.NONE:
+            case RIG_LED_STATUS.DISCONNECTED:
+            case RIG_LED_STATUS.UNKNOWN:
+            default:
+                return 'action.disabled';
+        }
+    }, [isSocketConnected, resolvedRigLedStatus]);
 
     const commandStateLabel = React.useMemo(() => {
         if (!activeRigCommand) return t('common.not_available', { ns: 'common', defaultValue: 'N/A' });
@@ -359,7 +380,7 @@ const RigControl = React.memo(function RigControl({ trackerId: trackerIdOverride
         if (effectiveRigData['connected'] === true) {
             return t('rig_control.connected');
         } else  if (effectiveRigData['connected'] === false) {
-            return t('rig_control.not_connected');
+            return t('common.disconnected', { ns: 'common', defaultValue: 'Disconnected' });
         } else {
             return t('rig_control.unknown');
         }
@@ -611,16 +632,16 @@ const RigControl = React.memo(function RigControl({ trackerId: trackerIdOverride
                             if (!isSocketConnected) {
                                 return (theme) => `linear-gradient(135deg, ${theme.palette.overlay.light} 0%, ${theme.palette.overlay.main} 100%)`;
                             }
-                            if (effectiveRigData?.tracking) {
+                            if (resolvedRigLedStatus === RIG_LED_STATUS.TRACKING) {
                                 return (theme) => `linear-gradient(135deg, ${theme.palette.success.main}26 0%, ${theme.palette.success.main}0D 100%)`;
                             }
-                            if (effectiveRigData?.stopped) {
-                                return (theme) => `linear-gradient(135deg, ${theme.palette.warning.main}26 0%, ${theme.palette.warning.main}0D 100%)`;
-                            }
-                            if (effectiveRigData?.connected) {
+                            if (resolvedRigLedStatus === RIG_LED_STATUS.STOPPED) {
                                 return (theme) => `linear-gradient(135deg, ${theme.palette.info.main}26 0%, ${theme.palette.info.main}0D 100%)`;
                             }
-                            return (theme) => `linear-gradient(135deg, ${theme.palette.error.main}26 0%, ${theme.palette.error.main}0D 100%)`;
+                            if (resolvedRigLedStatus === RIG_LED_STATUS.CONNECTED) {
+                                return (theme) => `linear-gradient(135deg, ${theme.palette.info.main}26 0%, ${theme.palette.info.main}0D 100%)`;
+                            }
+                            return (theme) => `linear-gradient(135deg, ${theme.palette.action.disabledBackground} 0%, ${theme.palette.action.hover} 100%)`;
                         })(),
                         borderBottom: '1px solid',
                         borderColor: 'divider'
