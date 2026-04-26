@@ -257,7 +257,6 @@ const RigControl = React.memo(function RigControl({ trackerId: trackerIdOverride
         !hasTargets ||
         isRigCommandBusy ||
         [RIG_STATES.TRACKING, RIG_STATES.CONNECTED, RIG_STATES.STOPPED].includes(effectiveTrackingState['rig_state']) ||
-        ["none", ""].includes(effectiveSelectedRotator) ||
         ["none", ""].includes(effectiveSelectedRadioRigValue);
     const connectRigDisabledReason = !hasTargets
         ? 'No targets configured'
@@ -265,11 +264,9 @@ const RigControl = React.memo(function RigControl({ trackerId: trackerIdOverride
         ? 'Command in progress'
         : [RIG_STATES.TRACKING, RIG_STATES.CONNECTED, RIG_STATES.STOPPED].includes(effectiveTrackingState['rig_state'])
             ? 'Rig is already connected or tracking'
-            : ["none", ""].includes(effectiveSelectedRotator)
-                ? 'Select a rotator first'
-                : ["none", ""].includes(effectiveSelectedRadioRigValue)
-                    ? 'Select a rig first'
-                    : null;
+            : ["none", ""].includes(effectiveSelectedRadioRigValue)
+                ? 'Select a rig first'
+                : null;
 
     const disconnectRigDisabled = !hasTargets || isRigCommandBusy || [RIG_STATES.DISCONNECTED].includes(effectiveTrackingState['rig_state']);
     const disconnectRigDisabledReason = !hasTargets
