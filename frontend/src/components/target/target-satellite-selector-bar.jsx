@@ -69,6 +69,25 @@ import { resolveTabHardwareLedStatus } from "../common/hardware-status.js";
 const TARGET_SLOT_ID_PATTERN = /^target-(\d+)$/;
 const ADD_TARGET_TAB_VALUE = '__add-target__';
 
+const normalizeAssignedResourceId = (value) => {
+    const normalized = String(value ?? '').trim();
+    if (!normalized || normalized.toLowerCase() === 'none') {
+        return '';
+    }
+    return normalized;
+};
+
+const resolveObservationTrackerId = (observation) => {
+    const resolved = String(
+        observation?.tracker_id
+        || observation?.runtime_tracker_id
+        || observation?.active_tracker_id
+        || observation?.id
+        || ''
+    ).trim();
+    return resolved;
+};
+
 const parseTargetSlotNumber = (trackerId = '') => {
     const match = String(trackerId || '').match(TARGET_SLOT_ID_PATTERN);
     if (!match) {
@@ -264,7 +283,7 @@ const TargetSatelliteSelectorBar = React.memo(function TargetSatelliteSelectorBa
         const running = schedulerObservations.filter((obs) => obs?.status === 'running');
         return new Set(
             running
-                .map((obs) => String(obs?.id || '').trim())
+                .map((obs) => resolveObservationTrackerId(obs))
                 .filter((value) => value.length > 0)
         );
     }, [schedulerObservations]);
@@ -596,6 +615,7 @@ const TargetSatelliteSelectorBar = React.memo(function TargetSatelliteSelectorBa
         const satName = view?.satelliteData?.details?.name || 'No satellite';
         const satNorad = effectiveTrackingState?.norad_id || 'none';
         const rotatorId = view?.selectedRotator || instance?.rotator_id || effectiveTrackingState?.rotator_id || 'none';
+        const normalizedTabRotatorId = normalizeAssignedResourceId(rotatorId);
         const rigId = view?.selectedRadioRig || instance?.rig_id || effectiveTrackingState?.rig_id || 'none';
         const rotatorName = String(rotatorId) === 'none'
             ? 'No rotator'
@@ -618,13 +638,15 @@ const TargetSatelliteSelectorBar = React.memo(function TargetSatelliteSelectorBa
         const linkedObservations = schedulerObservations
             .filter((obs) => obs?.enabled)
             .filter((obs) => {
-                const obsRotatorId = String(obs?.rotator?.id || obs?.rotator_id || 'none');
-                const obsNorad = String(obs?.satellite?.norad_id || 'none');
-                if (obsRotatorId !== 'none' && String(rotatorId) !== 'none') {
-                    return obsRotatorId === String(rotatorId);
+                // Observation ownership should follow tracker/rotator assignment only.
+                // Matching by NORAD can incorrectly mark multiple same-satellite target tabs.
+                const obsRotatorId = normalizeAssignedResourceId(obs?.rotator?.id || obs?.rotator_id);
+                if (obsRotatorId) {
+                    return obsRotatorId === normalizedTabRotatorId;
                 }
-                if (obsNorad !== 'none' && String(satNorad) !== 'none') {
-                    return obsNorad === String(satNorad);
+                const obsTrackerId = resolveObservationTrackerId(obs);
+                if (obsTrackerId) {
+                    return obsTrackerId === String(instanceTrackerId);
                 }
                 return false;
             });
