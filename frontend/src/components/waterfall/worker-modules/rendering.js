@@ -278,6 +278,14 @@ export function drawFftLine({
 }) {
     const [minDb, maxDb] = dbRange;
     const graphWidth = width;
+    const mapAmplitudeToY = (amplitude) => {
+        const normalizedValue = Math.max(0, Math.min(1, (amplitude - minDb) / (maxDb - minDb)));
+
+        // Keep the visual pan while preserving full vertical reach:
+        // normalized=1 can still reach y=0 (top), normalized=0 remains near bottom.
+        const y = height - (normalizedValue * (height + linePanPx)) + linePanPx;
+        return Math.min(height, Math.max(0, y));
+    };
 
     // Adaptive target points: use width for small FFTs, cap at reasonable limit for large FFTs
     // This prevents excessive point generation while maintaining visual quality
@@ -341,11 +349,7 @@ export function drawFftLine({
     for (let i = 0; i < downsampledPoints.length; i++) {
         const point = downsampledPoints[i];
         const x = point.x * graphWidth;
-        const amplitude = point.y;
-
-        // Normalize amplitude to canvas height using dB range
-        const normalizedValue = Math.max(0, Math.min(1, (amplitude - minDb) / (maxDb - minDb)));
-        const y = Math.min(height, Math.max(0, height - (normalizedValue * height) + linePanPx));
+        const y = mapAmplitudeToY(point.y);
 
         if (i === 0) {
             ctx.moveTo(x, y);
@@ -355,12 +359,7 @@ export function drawFftLine({
             // Use quadratic curve for smooth interpolation between points
             const prevPoint = downsampledPoints[i - 1];
             const prevX = prevPoint.x * graphWidth;
-            const prevAmplitude = prevPoint.y;
-            const prevNormalizedValue = Math.max(0, Math.min(1, (prevAmplitude - minDb) / (maxDb - minDb)));
-            const prevY = Math.min(
-                height,
-                Math.max(0, height - (prevNormalizedValue * height) + linePanPx),
-            );
+            const prevY = mapAmplitudeToY(prevPoint.y);
 
             // Control point is midway between previous and current point
             const cpX = (prevX + x) / 2;
@@ -374,9 +373,7 @@ export function drawFftLine({
     if (downsampledPoints.length > 2) {
         const lastPoint = downsampledPoints[downsampledPoints.length - 1];
         const x = lastPoint.x * graphWidth;
-        const amplitude = lastPoint.y;
-        const normalizedValue = Math.max(0, Math.min(1, (amplitude - minDb) / (maxDb - minDb)));
-        const y = Math.min(height, Math.max(0, height - (normalizedValue * height) + linePanPx));
+        const y = mapAmplitudeToY(lastPoint.y);
         ctx.lineTo(x, y);
     }
 
